@@ -1,0 +1,38 @@
+# cp one.c to two.c
+# create two.h based on name of two.c
+# echo 'extra' > two.h && cp two.h to one.h
+# one.c depends on one.h
+# three.c depends on two.h and one.c
+# copy one.c to three.c
+
+rule InnerBuild
+{
+    Build2 $(2) : $(3) ;
+}
+
+rule InnerInnerBuild
+{
+    Build2 $(2) : $(1) ;
+    Build3
+}
+
+rule Build
+{
+    Build1 $(2) : $(1) ;
+    InnerBuild "inner" $(1) : $(2) ;
+}
+
+actions Build1
+{
+    cp $(>) $(<) ;
+}
+
+actions Build2
+{
+    cp $(>) $(<) ;
+}
+
+actions Build2
+{
+    cp $(>) $(<) ;
+}

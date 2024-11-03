@@ -1,0 +1,6 @@
+SubDir TOP sub1 ;
+
+Library libtest : one.c two.c test.gen ;
+
+Depends one.o : test.h ;
+Depends two.o : test.h ;

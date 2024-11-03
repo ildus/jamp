@@ -1,0 +1,16 @@
+rule One
+{
+    Echo $(1) ;
+    Two $(2) : $(3) ;
+    Clean clean : $(2) ;
+}
+
+actions Two
+{
+    echo 'copying $(>) to $(<)'
+    cp $(>) $(<)
+}
+
+One "building test" : test.c : test.h ;
+Depends all : test.c ;
+Depends test.c : test.h ;

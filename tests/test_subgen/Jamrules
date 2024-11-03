@@ -1,0 +1,25 @@
+actions GenH1
+{
+    ./gen.py $(<[1]) $(<[2]) $(>)
+}
+
+rule GenH
+{
+    h = $(<:BS=.h) ;
+    GenH1 $(<) $(h) : $(>) ;
+    DEPENDS $(<) $(h) : $(>) ;
+    #INCLUDES $(<) : $(h) ;
+    LOCATE on $(h) = $(LOCATE_TARGET) ;
+    LOCATE on $(<) = $(LOCATE_TARGET) ;
+    Clean clean : $(<) $(h) ;
+}
+
+rule UserObject
+{
+    switch $(>)
+    {
+        case *.gen : Cc $(<) : $(<:S=.c) ; GenH $(<:S=.c) : $(>) ;
+        case *.c : Cc $(<) : $(<:S=.c) ;
+        case * : Exit "Unknown! suffix on " $(>) ;
+    }
+}

@@ -1,0 +1,15 @@
+rule Copy
+{
+}
+
+actions Copy
+{
+    cp $(>) $(<)
+}
+
+Copy two.c : one.c ;
+Copy three.c : one.c ;
+MakeLocate two.c : sub1 ;
+MakeLocate three.c : sub2 ;
+MkDir sub1 ;
+MkDir sub2 ;

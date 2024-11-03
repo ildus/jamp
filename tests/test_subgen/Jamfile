@@ -1,0 +1,6 @@
+SubDir TOP ;
+
+Main app : main.c ;
+LinkLibraries app : libtest ;
+
+SubInclude TOP sub1 ;

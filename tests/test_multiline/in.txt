@@ -1,0 +1,5 @@
+line_to_delete
+to_replace_1
+just a text
+to_replace_2
+more text

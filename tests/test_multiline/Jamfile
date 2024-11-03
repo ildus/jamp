@@ -1,0 +1,19 @@
+rule SedShell
+{
+}
+
+actions quietly SedShell
+{
+    a=1
+    b=2
+    sed  '-e /line_to_delete/d' \
+            '-e s:to_replace_1:replaced_1:g' \
+            '-e s:to_replace_2:replaced_2:g' '-e s:to_replace_3:replaced_3:g' \
+            $(>) > $(<)
+    echo $a $b
+    echo $b $a
+    echo 'one two three' | awk '
+        {print $1 $2 $3}'
+}
+
+SedShell out.txt : in.txt ;
