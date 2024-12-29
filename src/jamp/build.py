@@ -129,7 +129,7 @@ def ninja_build(state: State, output):
 
     phonies = {}
     for target in state.targets.values():
-        deps = [escape_path(i) for i in target.get_dependency_list(state)]
+        deps = (escape_path(i) for i in target.get_dependency_list(state))
         if target.notfile:
             writer.build(target.name, "phony", implicit=deps)
             phonies[target.name] = True
@@ -139,7 +139,7 @@ def ninja_build(state: State, output):
             if target.collection_name() in phonies:
                 continue
 
-            deps = [escape_path(i) for i in target.collection]
+            deps = (escape_path(i) for i in target.collection)
             writer.build(target.collection_name(), "phony", implicit=deps)
             phonies[target.collection_name()] = True
 
@@ -157,17 +157,19 @@ def ninja_build(state: State, output):
             all_deps.update(deps)
 
         if outputs:
-            res_deps = [escape_path(dep) for dep in all_deps if dep not in outputs]
             inputs = set(
                 [
                     escape_path(source.boundname or source.name)
                     for source in upd_action.sources
                 ]
             )
+            res_deps = (
+                dep for dep in all_deps if dep not in inputs and dep not in outputs
+            )
 
             writer.build(
-                [escape_path(i) for i in outputs],
+                (escape_path(i) for i in outputs),
                 upd_action.name,
-                list(inputs),
+                inputs,
                 implicit=res_deps,
             )
