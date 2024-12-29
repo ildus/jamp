@@ -553,6 +553,9 @@ Depends all shell files lib exe obj : first ;
 NotFile all first shell files lib exe obj dirs uninstall ;
 Always  uninstall ;
 
+# Will collect generated headers here
+NotFile _gen_headers ;
+
 #
 # Rules
 #
@@ -1310,11 +1313,7 @@ rule MakeLocate
     if $(>)
     {
         LOCATE on $(<) = $(>) ;
-        if ! [ PathExists $(>[1]) ]
-        {
-            Depends $(<) : $(>[1]:G=dir) ;
-            MkDir $(>[1]:G=dir) ;
-        }
+        MkDir $(>[1]:G=dir) ;
     }
 }
 

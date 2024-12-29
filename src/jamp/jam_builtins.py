@@ -60,7 +60,8 @@ class Builtins:
 
         paths = expand(state, paths_arg)
 
-        dirs_target = Target.bind(state, "dirs")
+        dirs_target = state.targets["dirs"]
+        dirs_target.is_dirs_target = True
 
         for path in paths:
             p = Pathname()

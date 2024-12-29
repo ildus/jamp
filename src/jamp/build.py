@@ -146,6 +146,15 @@ def ninja_build(state: State, output):
             writer.build(target.collection_name(), "phony", implicit=deps)
             phonies[target.collection_name()] = True
 
+    gen_headers = dict.fromkeys(
+        (
+            dep.boundname
+            for dep in state.targets["_gen_headers"].depends
+            if dep.boundname
+        ),
+        0,
+    )
+
     for step in state.build_steps:
         all_deps = set()
         outputs = set()
@@ -166,13 +175,22 @@ def ninja_build(state: State, output):
                     for source in upd_action.sources
                 ]
             )
-            res_deps = (
-                dep for dep in all_deps if dep not in inputs and dep not in outputs
-            )
+            res_deps = set()
+            order_only = set()
+
+            for dep in all_deps:
+                if dep in inputs or dep in outputs:
+                    continue
+
+                if dep in gen_headers:
+                    order_only.add(dep)
+                else:
+                    res_deps.add(dep)
 
             writer.build(
                 (escape_path(i) for i in outputs),
                 upd_action.name,
                 inputs,
                 implicit=res_deps,
+                order_only=order_only,
             )

@@ -64,7 +64,7 @@ class State:
         if check_vms() and n.endswith("]"):
             return True
 
-        if os.path.exists(n) and os.path.isdir(n):
+        if os.path.isdir(n):
             return True
 
         t = self.targets.get(n)
@@ -296,7 +296,6 @@ class Target:
         return UnderTarget(state, self)
 
     def __init__(self, name: str, notfile=False):
-        self.is_exact_location = False
         self.headers_searched = False
         self.name = name
         self.depends = set()
@@ -309,6 +308,9 @@ class Target:
         self.build_step: tuple = None
         self.deps = None
         self.is_dir = False
+        self.is_header = False
+        self.is_output = False
+        self.is_dirs_target = False
 
         # collection is optimization, if this target is include and it depends on other
         # files just create a phony target with this target and all others
@@ -339,7 +341,7 @@ class Target:
             if t.notfile:
                 depval = t.name
             elif t.boundname:
-                if state.is_dir(t.boundname):
+                if not self.is_dirs_target and state.is_dir(t.boundname):
                     continue
 
                 depval = t.boundname
@@ -448,6 +450,10 @@ class Target:
         if not self.boundname:
             self.boundname = self.search(state, strict=strict)
 
+            if self.is_output and self.is_header:
+                gen_headers = state.targets["_gen_headers"]
+                gen_headers.depends.add(self)
+
         if self.boundname:
             state.target_locations[self.boundname] = self
 
@@ -466,6 +472,9 @@ class Target:
         path = Pathname()
         path.parse(self.name)
 
+        # remember if it's header
+        self.is_header = path.suffix in (".h", ".hpp", ".hh")
+
         if path.member:
             return None
 
@@ -479,7 +488,6 @@ class Target:
             path.root = locate_dir
             res_path = path.build(binding=True)
 
-            self.is_exact_location = True
             return res_path
         else:
             search = state.vars.get("SEARCH", on_target=self)
@@ -489,7 +497,6 @@ class Target:
                 res_path = path.build(binding=True)
 
                 if os.path.exists(res_path):
-                    self.is_exact_location = True
                     return res_path
                 elif res_path in state.target_locations:
                     # this could be a generated file, and if it's in targets just return that path
@@ -502,7 +509,6 @@ class Target:
         res_path = path.build(binding=True)
 
         if strict and os.path.exists(res_path):
-            self.is_exact_location = True
             return res_path
 
         return res_path if not strict else None

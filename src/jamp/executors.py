@@ -218,6 +218,7 @@ def exec_rule_action(state: State, rule: Rule, action_name: str, params: list):
         step = (build_targets, upd_action)
         for target in build_targets:
             target.build_step = step
+            target.is_output = True
 
         state.build_steps.append(step)
 
