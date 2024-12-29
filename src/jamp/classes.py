@@ -327,7 +327,7 @@ class Target:
         res = set()
         use_cached = outputs is None or len(outputs) == 1
 
-        if level == 5:
+        if level == 10:
             # do not go too deep for includes
             return res
 
@@ -406,7 +406,7 @@ class Target:
         return self.deps
 
     def find_headers(self, state: State, level=0):
-        if level == 5:
+        if level == 10:
             # do not go too deep in searching
             return
 
