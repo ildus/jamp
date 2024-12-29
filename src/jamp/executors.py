@@ -49,7 +49,7 @@ def run(state: State, cmds: Union[list, Exec]) -> Optional[int]:
                     return ret
 
 
-def bind_targets(state: State):
+def bind_targets(state: State, search_headers=True):
     """Bind target to actual locations"""
 
     target: Target = None
@@ -57,14 +57,15 @@ def bind_targets(state: State):
     for target in state.targets.values():
         target.bind_location(state)
 
-    for target in tuple(state.targets.values()):
-        # tuple is because targets dict will change while searching
-        if target.boundname:
-            target.find_headers(state)
+    if search_headers:
+        for target in tuple(state.targets.values()):
+            # tuple is because targets dict will change while searching
+            if target.boundname:
+                target.find_headers(state)
 
-    # now bind found headers
-    for target in state.targets.values():
-        target.bind_location(state, strict=True)
+        # now bind found headers
+        for target in state.targets.values():
+            target.bind_location(state, strict=True)
 
 
 class ExecutionError(Exception):

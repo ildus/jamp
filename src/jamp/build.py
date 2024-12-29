@@ -15,6 +15,9 @@ def parse_args():
     parser.add_argument("-b", "--build", action="store_true", help="call ninja")
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
     parser.add_argument(
+        "-H", "--skip-headers", action="store_true", help="skip headers search"
+    )
+    parser.add_argument(
         "-d",
         "--debug",
         default=[],
@@ -78,7 +81,7 @@ def main_cli():
     if args.verbose:
         print("...binding targets and searching headers...")
 
-    executors.bind_targets(state)
+    executors.bind_targets(state, search_headers=not args.skip_headers)
 
     print(f"...found {len(state.targets)} target(s)...")
     if args.verbose:
