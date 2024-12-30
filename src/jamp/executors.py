@@ -252,12 +252,16 @@ def exec_one_rule(state: State, name: str, params: list):
                 return
 
         if name != "Clean":
-            # we just ignore clean rules, ninja will do that
+            # we just ignore clean rules, ninja will do cleaning part
             if name not in complained_rules:
                 output(f"warning: unknown rule {name}")
                 complained_rules.add(name)
 
         return
+
+    # create an updating action for actions block with the same name as the rule
+    if name in state.actions:
+        exec_rule_action(state, rule, name, params)
 
     # execute rule commands
     old_params = state.params
@@ -268,10 +272,6 @@ def exec_one_rule(state: State, name: str, params: list):
     ret = exec_block(state, rule.commands)
     state.params = old_params
     state.current_rule = old_rule
-
-    # create an updating action for actions block with the same name as the rule
-    if name in state.actions:
-        exec_rule_action(state, rule, name, params)
 
     return ret
 

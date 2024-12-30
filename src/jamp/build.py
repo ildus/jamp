@@ -127,11 +127,19 @@ def ninja_build(state: State, output):
                 generator=upd_action.generator,
             )
         else:
+            # set depfile if needed
+            for t in upd_action.targets:
+                depfile = t.vars.get("DEPFILE")
+                if depfile:
+                    upd_action.depfile = depfile
+                    break
+
             writer.rule(
                 upd_action.name,
                 full_cmd,
                 restat=upd_action.restat,
                 generator=upd_action.generator,
+                depfile=upd_action.depfile,
             )
 
     phonies = {}

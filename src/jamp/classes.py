@@ -566,6 +566,7 @@ class UpdatingAction:
         self.command = None
         self.restat = False
         self.generator = False
+        self.depfile = None
 
     def link(self, upd_action):
         self.next.append(upd_action)
@@ -603,6 +604,7 @@ class UpdatingAction:
             state.vars.current_target = self.targets
             line = var_string(line, self.bound_params(), state.vars)
             line = line.replace("$", "$$")
+            line = line.replace("<NINJA_SIGIL>", "$")
             state.vars.current_target = old_target
 
             if not line:

@@ -572,9 +572,10 @@ rule GenBuildConfig
     Generated $(<) ;
     NotFile jamfiles ;
     Depends $(<) : jamfiles ;
+    GenBuildConfig1 $(<) ;
 }
 
-actions GenBuildConfig
+actions GenBuildConfig1
 {
     $(JAMP_PYTHON) "-m" "jamp" $(JAMP_OPTIONS)
 }
@@ -658,6 +659,16 @@ rule Cc
     CCFLAGS on $(<) += $(CCFLAGS) $(SUBDIRCCFLAGS) ;
     CCHDRS on $(<) = [ on $(<) FIncludes $(HDRS) ] ;
     CCDEFS on $(<) = [ on $(<) FDefines $(DEFINES) ] ;
+
+    if $(UNIX)
+    {
+        DEPFILE on $(<) = "$out.d" ;
+
+        # all $ signs are escaped in the command
+        # so for ninja vars we use <NINJA_SIGIL> text, which will be replaced
+        # with dollar sign
+        OPTIM on $(<) += -MD -MF <NINJA_SIGIL>out.d ;
+    }
 }
 
 # /C++ object : source ;
@@ -680,6 +691,12 @@ rule C++
 
     CCHDRS on $(<) = [ on $(<) FIncludes $(HDRS) ] ;
     CCDEFS on $(<) = [ on $(<) FDefines $(DEFINES) ] ;
+
+    if $(UNIX)
+    {
+        DEPFILE on $(<) = "$out.d" ;
+        OPTIM on $(<) += -MD -MF <NINJA_SIGIL>out.d ;
+    }
 }
 
 # /Chmod target ;
@@ -2010,21 +2027,15 @@ rule FAppendSuffix
 rule FQuote { return "\\\"$(<)\\\"" ; }
 rule FDefines
 {
-    if $(<)
-    {
-        return -D$(<) ;
-    }
-
-    return ;
+    return -D$(<) ;
 }
 rule FIncludes
 {
-    if $(<)
-    {
-        return -I$(<) ;
-    }
-
-    return ;
+    return -I$(<) ;
+}
+rule FDepOutputs
+{
+    return "-MD -MF $(<)" ;
 }
 
 rule FDirName
