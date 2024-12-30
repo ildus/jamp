@@ -172,10 +172,20 @@ class Builtins:
             state.always_build.add(target)
 
     def notfile(self, state: State, targets: list):
+        """Set the targets as phony"""
+
         targets = expand(state, targets)
         for target_name in targets:
             target = Target.bind(state, target_name)
             target.notfile = True
+
+    def generated(self, state: State, targets: list):
+        """Force targets use generator in their rules"""
+
+        targets = expand(state, targets)
+        for target_name in targets:
+            target = Target.bind(state, target_name)
+            target.generated = True
 
     def temporary(self, state: State, targets: list):
         targets = expand(state, targets)

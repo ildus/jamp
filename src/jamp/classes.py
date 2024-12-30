@@ -244,9 +244,6 @@ class Actions:
         self.bindlist = bindlist
         self.commands = commands
 
-        # linked rules
-        self.rules = []
-
     def __repr__(self):
         return f"Actions {self.name}"
 
@@ -300,21 +297,40 @@ class Target:
         self.name = name
         self.depends = set()
         self.includes = set()
-        self.notfile = notfile  # phony
-        self.temporary = False
-        self.vars = {}
         self.boundname: Union[None, str] = None
         self.updating_actions: List[UpdatingAction] = []
         self.build_step: tuple = None
-        self.deps = None
+
+        # Created my MkDir rule
         self.is_dir = False
+
+        # The suffix was checked and set to True if it's header
         self.is_header = False
+
+        # This target used somewhere as an output
         self.is_output = False
+
+        # True if this is the main 'dirs' target
         self.is_dirs_target = False
+
+        # Force generator option to ninja
+        self.generated = False
 
         # collection is optimization, if this target is include and it depends on other
         # files just create a phony target with this target and all others
         self.collection = None
+
+        # Dependencies cache after get_dependency_list call without outputs
+        self.deps = None
+
+        # Target level variables (ON <target> calls and etc)
+        self.vars = {}
+
+        # Temporary rule called on this target
+        self.temporary = False
+
+        # NotFile rule called on this target
+        self.notfile = notfile  # phony
 
     def collection_name(self):
         t = self.name
@@ -597,7 +613,14 @@ class UpdatingAction:
     def prepare_action(self, state: State, action: Actions):
         quotes = []
         concat = ""
+
+        start_new_command = False
         for line in self.prepare_lines(state, action.commands):
+            if start_new_command:
+                concat += " ; $\n "
+
+            start_new_command = False
+
             # watch for open quotes
             for c in line:
                 if c in ["'", '"', "`"]:
@@ -626,7 +649,8 @@ class UpdatingAction:
             elif len(quotes):
                 concat += line + " "
             else:
-                concat += line + " ; $\n "
+                concat += line
+                start_new_command = True
 
         return concat
 
@@ -707,8 +731,10 @@ class UpdatingAction:
                     lines = action.get_command(state)
                     if check_vms():
                         base_lines += "$\n$^" + lines
+                    elif check_windows():
+                        base_lines += "$\n$^" + lines
                     else:
-                        base_lines += "$\n" + lines
+                        base_lines += " ; $\n" + lines
 
             if check_vms():
                 # just an empty line at the end

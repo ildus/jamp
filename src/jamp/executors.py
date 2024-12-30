@@ -168,10 +168,6 @@ def exec_rule_action(state: State, rule: Rule, action_name: str, params: list):
     source_names = lol_get(params, 1)
     action = state.actions[action_name]
 
-    if rule not in action.rules:
-        # just keep a link between action and rule
-        action.rules.append(rule)
-
     sources = []
     for source_name in source_names:
         source_t = Target.bind(state, source_name)
@@ -183,11 +179,14 @@ def exec_rule_action(state: State, rule: Rule, action_name: str, params: list):
         for arg in action.bindlist[1]:
             bindvars.add(arg.value)
 
+    generated = False
     prev_upd_action = None
     build_targets = []
     linking_targets = []
     for target_name in targets:
         target = Target.bind(state, target_name)
+        if target.generated:
+            generated = True
 
         if target.build_step is not None:
             # there is a build step for this target, this target goes there
@@ -214,6 +213,7 @@ def exec_rule_action(state: State, rule: Rule, action_name: str, params: list):
         # one build step, can output several targets
         upd_action = UpdatingAction(action, sources, params)
         upd_action.targets = build_targets
+        upd_action.generator = generated
 
         step = (build_targets, upd_action)
         for target in build_targets:
@@ -259,10 +259,6 @@ def exec_one_rule(state: State, name: str, params: list):
 
         return
 
-    # create an updating action for actions block with the same name as the rule
-    if name in state.actions:
-        exec_rule_action(state, rule, name, params)
-
     # execute rule commands
     old_params = state.params
     old_rule = state.current_rule
@@ -272,6 +268,10 @@ def exec_one_rule(state: State, name: str, params: list):
     ret = exec_block(state, rule.commands)
     state.params = old_params
     state.current_rule = old_rule
+
+    # create an updating action for actions block with the same name as the rule
+    if name in state.actions:
+        exec_rule_action(state, rule, name, params)
 
     return ret
 
@@ -312,6 +312,10 @@ def exec_include(state: State, location):
             print(f"Include failed on file: {t.boundname}")
             exit(1)
         else:
+            jamfiles_target = state.targets.get("jamfiles")
+            if jamfiles_target:
+                jamfiles_target.depends.add(t)
+
             with open(t.boundname) as f:
                 rules = f.read()
                 cmds = state.parse_and_compile(rules, filename=t.boundname)

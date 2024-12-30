@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 import subprocess as sp
 
 from jamp import executors
@@ -55,7 +56,10 @@ def main_cli():
         target=args.target,
     )
     jamfile = args.jamfile
+
     state.vars.set("JAMFILE", [jamfile])
+    state.vars.set("JAMP_PYTHON", [sys.executable])
+    state.vars.set("JAMP_OPTIONS", sys.argv[1:])
     state.vars.set("NINJA_ROOTDIR", [curdir])
 
     for var in args.env or ():

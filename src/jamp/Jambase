@@ -129,10 +129,14 @@
 #   Echo - blurt out targets on stdout
 #   Exit - blurt out targets and exit
 #   Includes - marks sources as headers for target (a codependency)
+#   NotFile - ignore the timestamp of the target (it's not a file)
+#   PathExists - return 1 if a specified path is exists
+#   Generated - when set on target forces using generator on its rule in ninja
+#
+#   Not supported by jamp:
+#   Temporary - target need not be present if sources haven't changed
 #   NoCare - don't panic if the target can't be built
 #   NoUpdate - create the target if needed but never update it
-#   NotFile - ignore the timestamp of the target (it's not a file)
-#   Temporary - target need not be present if sources haven't changed
 #
 # Special variables set by jam:
 #   $(<) - targets of a rule (to the left of the :)
@@ -560,6 +564,23 @@ NotFile _gen_headers ;
 # Rules
 #
 
+# Each include will be saved in jamfiles
+# And it will trigger build.ninja generator
+#
+rule GenBuildConfig
+{
+    Generated $(<) ;
+    NotFile jamfiles ;
+    Depends $(<) : jamfiles ;
+}
+
+actions GenBuildConfig
+{
+    $(JAMP_PYTHON) "-m" "jamp" $(JAMP_OPTIONS)
+}
+
+GenBuildConfig build.ninja ;
+
 # /As object : source ;
 #
 # Assemble the file _source_, called by the @Object rule.
@@ -635,7 +656,6 @@ rule Cc
     # compiles (VMS, NT) that malign multiple -D or -I flags.
 
     CCFLAGS on $(<) += $(CCFLAGS) $(SUBDIRCCFLAGS) ;
-
     CCHDRS on $(<) = [ on $(<) FIncludes $(HDRS) ] ;
     CCDEFS on $(<) = [ on $(<) FDefines $(DEFINES) ] ;
 }
@@ -716,6 +736,7 @@ rule GenFile
     local _s = [ FAppendSuffix $(>[1]) : $(SUFEXE) ] ;
     Depends $(_t) : $(_s) $(>[2-]) ;
     GenFile1 $(_t) : $(_s) $(>[2-]) ;
+    Generated $(_t) ;
     Clean clean : $(_t) ;
 }
 
