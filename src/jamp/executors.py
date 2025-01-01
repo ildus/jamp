@@ -49,7 +49,7 @@ def run(state: State, cmds: Union[list, Exec]) -> Optional[int]:
                     return ret
 
 
-def bind_targets(state: State, search_headers=True):
+def bind_targets(state: State, search_headers="base"):
     """Bind target to actual locations"""
 
     target: Target = None
@@ -57,11 +57,19 @@ def bind_targets(state: State, search_headers=True):
     for target in state.targets.values():
         target.bind_location(state)
 
+    db = None
+    if search_headers == "ripgrep":
+        from jamp.headers import scan_ripgrep_output
+
+        pattern = state.vars.get("HDRPATTERN")
+        if pattern:
+            db = scan_ripgrep_output(state, pattern[0])
+
     if search_headers:
         for target in tuple(state.targets.values()):
             # tuple is because targets dict will change while searching
             if target.boundname:
-                target.find_headers(state)
+                target.find_headers(state, db=db)
 
         # now bind found headers
         for target in state.targets.values():

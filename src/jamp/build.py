@@ -16,7 +16,11 @@ def parse_args():
     parser.add_argument("-b", "--build", action="store_true", help="call ninja")
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
     parser.add_argument(
-        "-H", "--skip-headers", action="store_true", help="skip headers search"
+        "-s",
+        "--search-type",
+        default="base",
+        choices=["base", "ripgrep", "grep", "none"],
+        help="headers search type (default is basic jam algorithm)",
     )
     parser.add_argument(
         "-d",
@@ -33,7 +37,7 @@ def parse_args():
         "-f", "--jamfile", default="Jamfile", help="--specify jam file name"
     )
     parser.add_argument(
-        "-s", "--env", action="append", help="--specify extra env variables"
+        "-e", "--env", action="append", help="--specify extra env variables"
     )
     args = parser.parse_args()
     return args
@@ -85,7 +89,7 @@ def main_cli():
     if args.verbose:
         print("...binding targets and searching headers...")
 
-    executors.bind_targets(state, search_headers=not args.skip_headers)
+    executors.bind_targets(state, search_headers=args.search_type)
 
     print(f"...found {len(state.targets)} target(s)...")
     if args.verbose:

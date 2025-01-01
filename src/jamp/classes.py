@@ -3,7 +3,7 @@ from typing import List, Union
 from functools import cache
 
 from jamp.paths import Pathname, check_vms, check_windows
-from jamp.headers import target_find_headers
+from jamp.headers import target_find_headers, skip_include
 
 
 class State:
@@ -293,7 +293,6 @@ class Target:
         return UnderTarget(state, self)
 
     def __init__(self, name: str, notfile=False):
-        self.headers_searched = False
         self.name = name
         self.depends = set()
         self.includes = set()
@@ -331,6 +330,9 @@ class Target:
 
         # NotFile rule called on this target
         self.notfile = notfile  # phony
+
+        # Found headers
+        self.headers = None
 
     def collection_name(self):
         t = self.name
@@ -423,44 +425,24 @@ class Target:
         self.deps = res
         return self.deps
 
-    def find_headers(self, state: State, level=0):
+    def find_headers(self, state: State, level=0, db=None):
         if level == 10:
             # do not go too deep in searching
             return
 
-        if self.headers_searched:
+        if self.headers is not None:
             # do not search more than one time no each target
             return
 
-        self.headers_searched = True
-        before_incs = len(self.includes)
-        target_find_headers(state, self)
-        sub_root = state.sub_root()
+        self.headers = []
+        found = target_find_headers(state, self, db=db)
 
-        if before_incs != len(self.includes):
+        if found:
             for inc in self.includes:
-                inc.bind_location(state, strict=True)
-
-            for inc in self.includes:
-                if (
-                    sub_root
-                    and inc.boundname
-                    and not inc.boundname.startswith(sub_root[0])
-                ):
-                    # skip outside headers scanning
-                    if state.verbose and inc.boundname not in state.scan_skipped:
-                        if len(state.scan_skipped) == 0:
-                            print(
-                                "info: headers outside the source root "
-                                "directory will be skipped from headers scan"
-                            )
-                        print(f"skipped from headers scan: {inc.boundname}")
-                        state.scan_skipped.add(inc.boundname)
-
+                if skip_include(state, inc.boundname):
                     continue
 
-                if inc.boundname:
-                    inc.find_headers(state, level=level + 1)
+                inc.find_headers(state, level=level + 1, db=db)
 
     def bind_location(self, state: State, strict=False):
         if not self.boundname:

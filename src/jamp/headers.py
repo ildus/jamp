@@ -1,37 +1,74 @@
 import re
 import os
+import subprocess as sp
 
 from functools import cache
+from typing import Optional
 
 
-def target_find_headers(state, target):
+def target_find_headers(state, target, db: Optional[dict] = None) -> bool:
     from jamp.executors import exec_one_rule
 
+    before_incs = len(target.includes)
+
     if target.boundname is None:
-        return
+        return False
+
+    if target.headers:
+        return False
 
     hdrscan = state.vars.get("HDRSCAN", on_target=target)
     hdrrule = state.vars.get("HDRRULE", on_target=target)
 
     if not hdrscan or not hdrrule:
-        return
+        return False
 
     lol = [[target.name]]
-    headers = scan_headers(state, target.boundname, tuple(hdrscan))
+    headers = db.get(target.boundname) if db else None
+    target.headers = headers or scan_headers(state, target.boundname, tuple(hdrscan))
 
     if state.debug_headers:
         if state.limit_target is not None:
             if state.limit_target in target.name:
-                print(target.name, headers)
+                print(target.name, target.headers)
         else:
-            print(target.name, headers)
+            print(target.name, target.headers)
 
-    if headers:
-        lol.append(headers)
+    if target.headers:
+        lol.append(target.headers)
 
         with target.overlay(state):
             for rule_name in hdrrule:
                 exec_one_rule(state, rule_name, lol)
+
+    if before_incs != len(target.includes):
+        for inc in target.includes:
+            inc.bind_location(state, strict=True)
+
+        return True
+
+    return False
+
+
+def skip_include(state, boundname):
+    sub_root = state.sub_root()
+    if not boundname:
+        return True
+
+    if sub_root and not boundname.startswith(sub_root[0]):
+        # skip outside headers scanning
+        if state.verbose and boundname not in state.scan_skipped:
+            if len(state.scan_skipped) == 0:
+                print(
+                    "info: headers outside the source root "
+                    "directory will be skipped from headers scan"
+                )
+            print(f"skipped from headers scan: {boundname}")
+            state.scan_skipped.add(boundname)
+
+        return True
+
+    return False
 
 
 @cache
@@ -61,3 +98,39 @@ def scan_headers(state, fn: str, hdrscan: tuple):
                     headers += list(m.groups())
 
     return headers
+
+
+def scan_ripgrep_output(state, pattern):
+    expect_fn = True
+    headers = None
+    fn = None
+    skip_file = False
+
+    res = {}
+
+    lines = sp.check_output(["rg", "--heading", "-N", pattern])
+    for line in lines.splitlines():
+        if line == b"":
+            expect_fn = True
+            continue
+
+        try:
+            line = line.decode("utf8")
+        except UnicodeDecodeError:
+            continue
+
+        if expect_fn:
+            expect_fn = False
+            fn = os.path.abspath(line)
+            skip_file = fn.endswith(".yi")
+            continue
+
+        if skip_file:
+            continue
+
+        headers = res.setdefault(fn, [])
+
+        for m in re.finditer(pattern, line):
+            headers += list(m.groups())
+
+    return res
