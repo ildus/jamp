@@ -64,6 +64,12 @@ def bind_targets(state: State, search_headers="base"):
         pattern = state.vars.get("HDRPATTERN")
         if pattern:
             db = scan_ripgrep_output(state, pattern[0])
+    elif search_headers == "grep":
+        from jamp.headers import scan_grep_output
+
+        pattern = state.vars.get("HDRPATTERN")
+        if pattern:
+            db = scan_grep_output(state, pattern[0])
 
     if search_headers:
         for target in tuple(state.targets.values()):

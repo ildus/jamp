@@ -134,3 +134,33 @@ def scan_ripgrep_output(state, pattern):
             headers += list(m.groups())
 
     return res
+
+
+def scan_grep_output(state, pattern):
+    from jamp.paths import check_vms
+
+    res = {}
+    lines = sp.check_output(["grep", "-I", "-s", "-H", "-r", "-E", pattern])
+
+    for line in lines.splitlines():
+        try:
+            line = line.decode("utf8")
+        except UnicodeDecodeError:
+            continue
+
+        try:
+            fn, match = line.split(":", 1)
+        except ValueError:
+            print(f"grep returned unexpected output: {line}")
+            continue
+
+        fn = os.path.abspath(fn) if not check_vms() else fn
+        if fn.endswith(".yi"):
+            continue
+
+        headers = res.setdefault(fn, [])
+
+        for m in re.finditer(pattern, match):
+            headers += list(m.groups())
+
+    return res
