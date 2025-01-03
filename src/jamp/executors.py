@@ -133,28 +133,32 @@ def exec_assign_on_target(
 ):
     """Bind a variable to specific targets"""
     targets_var = expand(state, targets)
-    value = expand(state, assign_list, skip_empty=False)
 
-    for varname in expand(state, name_arg):
-        for target_name in iter_var(targets_var):
-            target = Target.bind(state, target_name)
+    for target_name in iter_var(targets_var):
+        target = Target.bind(state, target_name)
+
+        with target.overlay(state):
+            # value should be expanded on target influence
+            value = expand(state, assign_list, skip_empty=False)
             target_vars = target.vars
-            if assign_type == "=":
-                target_vars[varname] = value
-            elif assign_type == "?=":
-                if varname not in target_vars:
+
+            for varname in expand(state, name_arg):
+                if assign_type == "=":
                     target_vars[varname] = value
-            elif assign_type == "+=":
-                if varname not in target_vars:
-                    target_vars[varname] = value
-                else:
-                    curval = flatten(target_vars[varname])
-                    if curval:
-                        target_vars[varname] = list(iter_var(curval)) + list(
-                            iter_var(value)
-                        )
-                    else:
+                elif assign_type == "?=":
+                    if varname not in target_vars:
                         target_vars[varname] = value
+                elif assign_type == "+=":
+                    if varname not in target_vars:
+                        target_vars[varname] = value
+                    else:
+                        curval = flatten(target_vars[varname])
+                        if curval:
+                            target_vars[varname] = list(iter_var(curval)) + list(
+                                iter_var(value)
+                            )
+                        else:
+                            target_vars[varname] = value
 
 
 def exec_break(state: State, arg) -> int:

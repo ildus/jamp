@@ -366,94 +366,94 @@ else if $(UNIX)
     switch $(OS)
     {
     case AIX :
-    LINKLIBS    ?= -lbsd ;
+        LINKLIBS    ?= -lbsd ;
 
     case AMIGA :
-    CC      ?= gcc ;
-    YACC        ?= bison -y ;
+        CC      ?= gcc ;
+        YACC        ?= bison -y ;
 
     case CYGWIN :
-    CC      ?= gcc ;
-    CCFLAGS     += -D__cygwin__ ;
-    LEX     ?= flex ;
-    JAMSHELL    ?= sh -c ;
-    RANLIB      ?= "" ;
-    SUFEXE      ?= .exe ;
-    YACC        ?= bison -y ;
+        CC      ?= gcc ;
+        CCFLAGS     += -D__cygwin__ ;
+        LEX     ?= flex ;
+        JAMSHELL    ?= sh -c ;
+        RANLIB      ?= "" ;
+        SUFEXE      ?= .exe ;
+        YACC        ?= bison -y ;
 
     case DGUX :
-    RANLIB      ?= "" ;
-    RELOCATE    ?= true ;
+        RANLIB      ?= "" ;
+        RELOCATE    ?= true ;
 
     case HPUX :
-    RANLIB      ?= "" ;
+        RANLIB      ?= "" ;
 
     case INTERIX :
-    CC      ?= gcc ;
-    JAMSHELL    ?= sh -c ;
-    RANLIB      ?= "" ;
+        CC      ?= gcc ;
+        JAMSHELL    ?= sh -c ;
+        RANLIB      ?= "" ;
 
     case IRIX :
-    RANLIB      ?= "" ;
+        RANLIB      ?= "" ;
 
     case Darwin :
-    PICFLAGS ?= -fPIC ;
+        PICFLAGS ?= -fPIC ;
 
     case MPEIX :
-    CC      ?= gcc ;
-    C++     ?= gcc ;
-    CCFLAGS     += -D_POSIX_SOURCE ;
-    HDRS        += /usr/include ;
-    RANLIB      ?= "" ;
-    NOARSCAN    ?= true ;
-    NOARUPDATE  ?= true ;
+        CC      ?= gcc ;
+        C++     ?= gcc ;
+        CCFLAGS     += -D_POSIX_SOURCE ;
+        HDRS        += /usr/include ;
+        RANLIB      ?= "" ;
+        NOARSCAN    ?= true ;
+        NOARUPDATE  ?= true ;
 
     case MVS :
-    RANLIB      ?= "" ;
+        RANLIB      ?= "" ;
 
     case NEXT :
-    AR      ?= libtool -o ;
-    RANLIB      ?= "" ;
+        AR      ?= libtool -o ;
+        RANLIB      ?= "" ;
 
     case Darwin :
-    C++     ?= c++ ;
-    MANDIR      ?= /usr/local/share/man ;
+        C++     ?= c++ ;
+        MANDIR      ?= /usr/local/share/man ;
 
     case NCR :
-    RANLIB      ?= "" ;
+        RANLIB      ?= "" ;
 
     case PTX :
-    RANLIB      ?= "" ;
+        RANLIB      ?= "" ;
 
     case QNX :
-    AR      ?= wlib ;
-    CC      ?= cc ;
-    CCFLAGS     ?= -Q ; # quiet
-    C++     ?= $(CC) ;
-    C++FLAGS    ?= -Q ; # quiet
-    LINK        ?= $(CC) ;
-    LINKFLAGS   ?= -Q ; # quiet
-    NOARSCAN    ?= true ;
-    RANLIB      ?= "" ;
+        AR      ?= wlib ;
+        CC      ?= cc ;
+        CCFLAGS     ?= -Q ; # quiet
+        C++     ?= $(CC) ;
+        C++FLAGS    ?= -Q ; # quiet
+        LINK        ?= $(CC) ;
+        LINKFLAGS   ?= -Q ; # quiet
+        NOARSCAN    ?= true ;
+        RANLIB      ?= "" ;
 
     case SCO :
-    RANLIB      ?= "" ;
-    RELOCATE    ?= true ;
+        RANLIB      ?= "" ;
+        RELOCATE    ?= true ;
 
     case SINIX :
-    RANLIB      ?= "" ;
+        RANLIB      ?= "" ;
 
     case SOLARIS :
-    RANLIB      ?= "" ;
-    AR      ?= "/usr/ccs/bin/ar ru" ;
+        RANLIB      ?= "" ;
+        AR      ?= "/usr/ccs/bin/ar ru" ;
 
-    case UNICOS :
-    NOARSCAN    ?= true ;
-    OPTIM       ?= -O0 ;
+        case UNICOS :
+        NOARSCAN    ?= true ;
+        OPTIM       ?= -O0 ;
 
     case UNIXWARE :
-    RANLIB      ?= "" ;
-    RELOCATE    ?= true ;
+        RANLIB      ?= "" ;
+        RELOCATE    ?= true ;
     }
 
     # UNIX defaults
@@ -492,7 +492,7 @@ DC ?= dmd ;
 # General defaults; a lot like UNIX
 #
 
-    AR      ?= ar csrD ;
+    AR      ?= ar ;
     AS      ?= as ;
     ASFLAGS     ?= ;
     AWK     ?= awk ;
@@ -660,7 +660,7 @@ rule Cc
     CCHDRS on $(<) = [ on $(<) FIncludes $(HDRS) ] ;
     CCDEFS on $(<) = [ on $(<) FDefines $(DEFINES) ] ;
 
-    if $(UNIX)
+    if $(UNIX) && ($(<:S) = ".o")
     {
         DEPFILE on $(<) = "$out.d" ;
 
@@ -991,8 +991,8 @@ rule Library
 #
 rule SharedLibrary
 {
-  SharedLibraryFromObjects $(<) : $(>:S=$(SUFOBJSHR)) : $(3) : $(4) ;
-  SharedObjects            $(>) ;
+    SharedLibraryFromObjects $(<) : $(>:S=$(SUFOBJSHR)) : $(3) : $(4) ;
+    SharedObjects            $(>) ;
 }
 
 if $(UNIX)
@@ -1036,14 +1036,8 @@ rule LibraryFromObjects
 
     # library depends on its member objects
 
-    if $(KEEPOBJS)
-    {
-        Depends obj : $(_s) ;
-    }
-    else
-    {
-        Depends lib : $(_l) ;
-    }
+    Depends obj : $(_s) ;
+    Depends lib : $(_l) ;
 
     # Set LOCATE for the library and its contents.  The bound
     # value shows up as $(NEEDLIBS) on the Link actions.
@@ -1110,14 +1104,8 @@ rule SharedLibraryFromObjects
     #Echo "Library is $(_l)"    ;
     # library depends on its member objects
 
-    if $(KEEPOBJS)
-    {
-      Depends obj : $(_s) ;
-    }
-    else
-    {
-      Depends lib : $(_l) ;
-    }
+    Depends obj : $(_s) ;
+    Depends lib : $(_l) ;
 
     # Set LOCATE for the library and its contents.  The bound
     # value shows up as $(NEEDLIBS) on the Link actions.
@@ -1142,41 +1130,44 @@ rule SharedLibraryFromObjects
     # creating the library is so much fun on Unix :-)
     if $(UNIX)
     {
-      local  libtool = [ LibToolFind ] ;  # find the right libtool
+        local  libtool = [ LibToolFind ] ;  # find the right libtool
 
-      AR on $(_l) = "$(libtool) --mode=link $(AR)" ;
+        AR on $(_l) = "$(libtool) --mode=link --tag=CC $(CC) -o" ;
+        Archive $(_l) : $(_s) ;
+
+        if $(RANLIB) { Ranlib $(_l) ; }
     }
     else if $(NT)
     {
-      local  _implib = $(4) ;
-      local  _def    = $(3) ;
+        local  _implib = $(4) ;
+        local  _def    = $(3) ;
 
-      _implib ?= $(_l:S=$(SUFLIBSHR)$(SUFLIB)) ;
-      _def    ?= $(_l:S=.def) ;
+        _implib ?= $(_l:S=$(SUFLIBSHR)$(SUFLIB)) ;
+        _def    ?= $(_l:S=.def) ;
 
-      Clean    clean : $(_implib) ;
-      Depends  lib   : $(_implib) $(_def) ;
+        Clean    clean : $(_implib) ;
+        Depends  lib   : $(_implib) $(_def) ;
 
-      Depends $(_implib) : $(_def) $(_l) ;
-      Depends $(_l)      : $(_def) ;
+        Depends $(_implib) : $(_def) $(_l) ;
+        Depends $(_l)      : $(_def) ;
 
-      DEFFILENAME on $(_l) = $(_def) ;
-      IMPLIBNAME  on $(_l) = $(_implib) ;
+        DEFFILENAME on $(_l) = $(_def) ;
+        IMPLIBNAME  on $(_l) = $(_implib) ;
 
-      MakeLocate $(_implib)        : $(LOCATE_TARGET) ;
-      MakeLocate $(_implib:S=.exp) : $(LOCATE_TARGET) ;
+        MakeLocate $(_implib)        : $(LOCATE_TARGET) ;
+        MakeLocate $(_implib:S=.exp) : $(LOCATE_TARGET) ;
 
-      if $(JAM_TOOLSET) in VISUALC BORLANDC
-      {
-        SharedLink-$(JAM_TOOLSET) $(_l) : $(_s) : $(_implib) : $(_def) ;
-      }
+        if $(JAM_TOOLSET) in VISUALC BORLANDC
+        {
+            SharedLink-$(JAM_TOOLSET) $(_l) : $(_s) : $(_implib) : $(_def) ;
+        }
 
-      DllLink $(_l) : $(_s) ;
+        DllLink $(_l) : $(_s) ;
     }
     else
     {
-      Echo "Sorry, I don't know how to make a shared library on your system" ;
-      Exit "Please contact the FTJam maintainer for help" ;
+        Echo "Sorry, I don't know how to make a shared library on your system" ;
+        Exit "Please contact the Jam maintainer for help" ;
     }
 }
 
@@ -1277,6 +1268,12 @@ rule LinkSharedLibraries
     }
     Depends $(_t) : $(>:S=$(_ext))  ;
     NEEDLIBS on $(_t) += $(>:S=$(_ext)) ;
+
+    if $(UNIX)
+    {
+        libtool on $(_t) = [ LibToolFind ] ;
+        LINK on $(_t) = "$(libtool) --mode=link --tag=CC $(CC)" ;
+    }
 }
 
 # /Main image : sources ;
@@ -1507,28 +1504,29 @@ rule Objects
 #
 rule SharedObjects
 {
-  # temporarily override SUFOBJ with $(SUFOBJSHR) to
-  #
-  local SUFOBJ = $(SUFOBJSHR) ;
+    # temporarily override SUFOBJ with $(SUFOBJSHR) to
+    #
+    local SUFOBJ = $(SUFOBJSHR) ;
 
-  # call the normal Objects rule
-  #
-  Objects $(<) ;
+    # call the normal Objects rule
+    #
+    Objects $(<) ;
 
-  # add the compiler-specific position-independent-code flag
-  # where needed
-  #
-  ObjectCcFlags $(<) : $(PICFLAGS) ;
+    # add the compiler-specific position-independent-code flag
+    # where needed
+    #
+    ObjectCcFlags $(<) : $(PICFLAGS) ;
 
-  # change the compiler invokation for all these objects
-  # to use Libtool on Unix systems. We explicitely disable the
-  # generation of static objects here
-  #
-  if $(UNIX)
-  {
-    libtool on $(<:S=$(SUFOBJ)) = [ LibToolFind ] ;
-    CC on $(<:S=$(SUFOBJ))      = "$(libtool) --mode=compile $(CC) -dynamic" ;
-  }
+    # change the compiler invokation for all these objects
+    # to use Libtool on Unix systems. We explicitely disable the
+    # generation of static objects here
+    #
+    if $(UNIX)
+    {
+        libtool on $(<:S=$(SUFOBJ)) = [ LibToolFind ] ;
+        CC on $(<:S=$(SUFOBJ))      = "$(libtool) --mode=compile --tag=CC $(CC)" ;
+        C++ on $(<:S=$(SUFOBJ))      = "$(libtool) --mode=compile --tag=CXX $(CC)" ;
+    }
 }
 
 # This used to call removal, but in ninja you can't just remove dependencies

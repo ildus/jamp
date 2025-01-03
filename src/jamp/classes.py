@@ -5,6 +5,10 @@ from functools import cache
 from jamp.paths import Pathname, check_vms, check_windows
 from jamp.headers import target_find_headers, skip_include
 
+PATH_VARS = set(
+    ["PATH", "LD_LIBRARY_PATH", "PKG_CONFIG_PATH", "CLASSPATH", "PYTHONPATH"]
+)
+
 
 class State:
     def __init__(
@@ -84,6 +88,9 @@ class Vars:
         # setting current target will force to using target variables
         self.current_target = None
 
+    def split_path(self, val):
+        return val.split(os.path.pathsep)
+
     def set_basic_vars(self):
         import os
         import platform
@@ -102,9 +109,13 @@ class Vars:
                 self.scope["NT"] = "1"
 
         self.scope["OSPLAT"] = platform.machine()
-        self.scope["OS"] = platform.system()
+        self.scope["OS"] = platform.system().upper()
         self.scope["JAMUNAME"] = platform.uname()
-        self.scope["JAMVERSION"] = "2.5.4"
+        self.scope["JAMVERSION"] = "2.5.5"
+
+        for k, v in self.scope.items():
+            if k in PATH_VARS:
+                self.scope[k] = self.split_path(v)
 
         if self.debug_env:
             for key, val in self.scope.items():
