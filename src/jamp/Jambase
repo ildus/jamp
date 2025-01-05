@@ -493,6 +493,7 @@ DC ?= dmd ;
 #
 
     AR      ?= ar ;
+    ARFLAGS     ?= csrD ;
     AS      ?= as ;
     ASFLAGS     ?= ;
     AWK     ?= awk ;
@@ -801,11 +802,6 @@ rule HdrRule
 {
     # HdrRule source : headers ;
 
-    # N.B.  This rule is called during binding, potentially after
-    # the fate of many targets has been determined, and must be
-    # used with caution: don't add dependencies to unrelated
-    # targets, and don't set variables on $(<).
-
     # Tell Jam that anything depending on $(<) also depends on $(>),
     # set SEARCH so Jam can find the headers, but then say we don't
     # care if we can't actually find the headers (they may have been
@@ -816,6 +812,7 @@ rule HdrRule
 
     if ! $(HDRSEARCH)
     {
+        # Do not propagate empty values
         return ;
     }
 
@@ -1133,6 +1130,7 @@ rule SharedLibraryFromObjects
         local  libtool = [ LibToolFind ] ;  # find the right libtool
 
         AR on $(_l) = "$(libtool) --mode=link --tag=CC $(CC) -o" ;
+        ARFLAGS on $(_l) = "" ;
         Archive $(_l) : $(_s) ;
 
         if $(RANLIB) { Ranlib $(_l) ; }
@@ -2109,7 +2107,7 @@ else if $(VMS)
 
 actions updated together piecemeal Archive
 {
-    $(AR) $(<) $(>)
+    $(AR) $(ARFLAGS) $(<) $(>)
 }
 
 actions As

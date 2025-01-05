@@ -85,8 +85,8 @@ class Vars:
         self.global_scope = self.scope
         self.set_basic_vars()
 
-        # setting current target will force to using target variables
-        self.current_target = None
+        # setting current targets will force to using target variables
+        self.current_target = []
 
     def split_path(self, val):
         return val.split(os.path.pathsep)
@@ -197,17 +197,18 @@ class Vars:
         if not isinstance(name, str):
             raise Exception(f"vars_get: expected str value for key name: got {name}")
 
-        if self.current_target:
-            on_target = self.current_target
+        if on_target:
+            self.current_target.append(on_target)
 
         res = None
-        if on_target and isinstance(on_target, Target) and name in on_target.vars:
-            res = on_target.vars.get(name)
-        elif on_target and isinstance(on_target, list):
-            for t in on_target:
+        if self.current_target:
+            for t in reversed(self.current_target):
                 if name in t.vars:
                     res = t.vars.get(name)
                     break
+
+        if on_target:
+            self.current_target.pop()
 
         if res is None:
             if name in self.scope:
@@ -279,12 +280,11 @@ class UnderTarget:
         self.target = target
 
     def __enter__(self):
-        self.saved = self.state.vars.current_target
-        self.state.vars.current_target = self.target
+        self.state.vars.current_target.append(self.target)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.state.vars.current_target = self.saved
+        self.state.vars.current_target.pop()
         return True
 
 
