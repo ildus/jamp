@@ -661,14 +661,18 @@ rule Cc
     CCHDRS on $(<) = [ on $(<) FIncludes $(HDRS) ] ;
     CCDEFS on $(<) = [ on $(<) FDefines $(DEFINES) ] ;
 
-    if $(UNIX) && ($(<:S) = ".o")
+    if $(UNIX)
     {
-        DEPFILE on $(<) = "$out.d" ;
+        switch $(<:S)
+        {
+            case .o :
+                DEPFILE on $(<) = "$out.d" ;
 
-        # all $ signs are escaped in the command
-        # so for ninja vars we use <NINJA_SIGIL> text, which will be replaced
-        # with dollar sign
-        OPTIM on $(<) += -MD -MF <NINJA_SIGIL>out.d ;
+                # all $ signs are escaped in the command
+                # so for ninja vars we use <NINJA_SIGIL> text, which will be replaced
+                # with dollar sign
+                OPTIM on $(<) += -MD -MF <NINJA_SIGIL>out.d ;
+        }
     }
 }
 
