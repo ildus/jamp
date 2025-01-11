@@ -355,11 +355,6 @@ else if $(VMS)
     SUFEXE      ?= .exe ;
     SUFLIB      ?= .olb ;
     SUFOBJ      ?= .obj ;
-
-    switch $(OS)
-    {
-    case OPENVMS : CCFLAGS ?= /stand=vaxc ;
-    }
 }
 else if $(UNIX)
 {
