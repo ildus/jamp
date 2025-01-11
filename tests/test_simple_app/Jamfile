@@ -1,0 +1,6 @@
+Main app : main.c ;
+Library libprint : print.c ;
+Library libsay : say.c ;
+LinkLibraries app : libprint libsay ;
+
+Echo [ on app return $(NEEDLIBS) ] ;

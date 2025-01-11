@@ -74,3 +74,16 @@ def test_multiline():
         assert os.path.exists("out.txt")
         sp.run(["ninja", "-t", "clean"])
         assert not os.path.exists("out.txt")
+
+
+def test_simple_app():
+    d = "tests/test_simple_app"
+    with rel(d):
+        main_cli()
+        sp.run(["ninja", "-t", "clean"])
+        sp.check_output("ninja")
+        assert os.path.exists("app")
+        assert os.path.exists("libprint.a")
+        assert os.path.exists("libsay.a")
+        sp.run(["ninja", "-t", "clean"])
+        assert not os.path.exists("app")

@@ -7,3 +7,4 @@ parser.out
 .ninja_log
 build.ninja
 *.o
+*.o.d
