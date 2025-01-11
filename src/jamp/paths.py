@@ -302,7 +302,11 @@ class Pathname:
                 prev_c = c
                 i -= 1
 
+        without_dir = False
         if self.base:
+            if not res_path:
+                without_dir = True
+
             res_path += self.base
 
         # If there is no suffix, we append a "." onto all generated
@@ -312,5 +316,8 @@ class Pathname:
             res_path += self.suffix
         elif binding and self.base:
             res_path += "."
+
+        if without_dir and binding:
+            res_path = "[]" + res_path
 
         return self.out_grist() + res_path + self.out_member()
