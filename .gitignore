@@ -5,6 +5,7 @@ tags
 parser.out
 
 .ninja_log
+.ninja_deps
 build.ninja
 *.o
 *.o.d
