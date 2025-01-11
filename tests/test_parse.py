@@ -262,3 +262,17 @@ def test_parse_assign_optional():
     """
     ast = parse(text)
     assert str(ast) == "[(ASSIGN, C++FLAGS, '?=', [/NAMES=UPPER])]"
+
+
+def test_on_arg_return():
+    text = """
+    Archive test.a : test.obj ;
+    AR on test.a = "ar ru" ;
+    Echo [ on test.a return $(AR) ] ;
+    """
+    ast = parse(text)
+    assert str(ast) == (
+        "[(CALL, Archive, (LOL, [test.a], [test.obj])), "
+        "(ARG_ON_TARGET, AR, [test.a], '=', [ar ru]), "
+        "(CALL, Echo, (LOL, [(RETURN_ON, test.a, [$(AR)])]))]"
+    )

@@ -493,7 +493,7 @@ DC ?= dmd ;
 #
 
     AR      ?= ar ;
-    ARFLAGS     ?= csrD ;
+    DEFAULT_ARFLAGS     ?= csrD ;
     AS      ?= as ;
     ASFLAGS     ?= ;
     AWK     ?= awk ;
@@ -1085,6 +1085,21 @@ rule LibraryFromObjects
     if ! ( $(NOARSCAN) || $(NOARUPDATE) ) { RmTemps $(_l) : $(_s) ; }
 }
 
+# /Archive archive : objects ;
+#
+rule Archive
+{
+    for _t in $(<)
+    {
+        local target_ar = [ on $(_t) return $(AR) ] ;
+
+        # Check if target has specific AR command, if not then apply global ARFLAGS
+        if $(target_var) = $(AR)
+        {
+            on $(_t) ARFLAGS = $(DEFAULT_ARFLAGS) ;
+        }
+    }
+}
 
 # /SharedLibraryFromObjects  library : objects : def : import ;
 #
@@ -1134,7 +1149,6 @@ rule SharedLibraryFromObjects
         local  libtool = [ LibToolFind ] ;  # find the right libtool
 
         AR on $(_l) = "$(libtool) --mode=link --tag=CC $(CC) -o" ;
-        ARFLAGS on $(_l) = "" ;
         Archive $(_l) : $(_s) ;
 
         if $(RANLIB) { Ranlib $(_l) ; }

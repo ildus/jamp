@@ -54,6 +54,7 @@ class Node(Enum):
     EXPR_BOP = 26
     EXPR_UNARY = 27
     EXPR_BLOCK = 28
+    RETURN_ON = 29
 
     def __repr__(self):
         return highlight(self.name)
@@ -385,9 +386,12 @@ def p_func(p):
     func : arg lol
         | ON arg arg lol
         | ON arg RETURN list
+
     """
     if len(p) == 3:
         p[0] = (Node.FUNC, p[1], p[2])
+    elif p[3] == 'return':
+        p[0] = (Node.RETURN_ON, p[2], p[4])
     else:
         p[0] = (Node.FUNC_ON, p[2], p[3], p[4])
 

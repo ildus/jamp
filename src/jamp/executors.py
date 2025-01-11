@@ -376,6 +376,22 @@ def exec_rule_on_target(state: State, targets, name, args):
         return Result(res)
 
 
+def exec_return_on_target(state: State, targets, val):
+    """
+    [ on target return val ]
+    return vars target vars influence
+    """
+
+    res = []
+    for target_name in expand(state, targets):
+        target = state.get_target(target_name)
+
+        with target.overlay(state):
+            res += expand(state, val)
+
+    return Result(res)
+
+
 def var_bool(var):
     if var is None:
         return False

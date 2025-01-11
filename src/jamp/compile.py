@@ -13,6 +13,14 @@ def compile(state: State, node: tuple | list):
             return Exec(executors.exec_rule, r)
         case Arg(value=(Node.FUNC_ON, *r)):
             return Exec(executors.exec_rule_on_target, r)
+        case Arg(value=(Node.RETURN_ON, targets, val)):
+            return Exec(
+                executors.exec_return_on_target,
+                (
+                    compile(state, targets),
+                    compile(state, val),
+                ),
+            )
         case (Node.RULE, *r):
             return Exec(compile_rule, r)
         case (Node.ASSIGN, *r):

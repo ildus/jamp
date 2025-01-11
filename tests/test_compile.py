@@ -670,3 +670,23 @@ def test_quoted_non_empty():
     run(state, state.parse_and_compile(rules))
     output = "/define=( inc1:,inc2: )\n"
     expect_output(output)
+
+
+def test_on_return():
+    rules = """
+    AR = ar ;
+
+    actions Archive
+    {
+        $(AR)
+    }
+
+    Archive test.a : test.obj ;
+    AR on test.a = "ar ru" ;
+    Echo [ on test.a return $(AR) "some" ] ;
+    Echo "ok" ;
+    """
+    state = State()
+    run(state, state.parse_and_compile(rules))
+    output = "ar ru some\nok\n"
+    expect_output(output)
