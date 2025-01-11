@@ -1089,7 +1089,7 @@ rule Archive
         local target_ar = [ on $(_t) return $(AR) ] ;
 
         # Check if target has specific AR command, if not then apply global ARFLAGS
-        if $(target_var) = $(AR)
+        if ( ! $(target_var) ) || $(target_var) = $(AR)
         {
             on $(_t) ARFLAGS = $(DEFAULT_ARFLAGS) ;
         }

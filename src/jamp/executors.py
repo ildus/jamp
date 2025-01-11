@@ -217,7 +217,10 @@ def exec_rule_action(state: State, rule: Rule, action_name: str, params: list):
             val = state.vars.get(var, on_target=target)
             if val:
                 bindtarget = Target.bind(state, val[0])
-                bindtarget.boundname = val[0]
+                if not target.boundname:
+                    with bindtarget.overlay(state):
+                        bindtarget.boundname = bindtarget.search(state)
+
                 bindtarget.add_depends(state, (target,))
                 bindtarget.varname = var
                 bindtargets.add(bindtarget)
