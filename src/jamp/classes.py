@@ -584,22 +584,23 @@ class UpdatingAction:
         targets = " ".join((target.boundname for target in self.targets))
         return " & ".join(names) + " " + targets
 
-    def check_bound_vars(self, state):
-        ''' Check for 'actions ... bind' vars and bind them if they are set '''
+    def modify_vms_paths(self, state):
+        if not self.bindvars:
+            return
 
-        if self.bindvars:
+        for target in self.targets:
             for var in self.bindvars:
-                value = state.vars.get(var)
-                resval = []
-                for target_name in value:
-                    target = Target.bind(state, target_name)
-                    if not target.boundname:
-                        target.boundname = target.search(state)
+                value = target.vars.get(var)
+                if value:
+                    modified = []
+                    for item in value:
+                        has_dir = ":" in item or "[" in item
+                        if has_dir:
+                            modified.append(item)
+                        else:
+                            modified.append("[]" + item)
 
-                    if target.boundname:
-                        resval.append(target.boundname)
-
-                self.targets[0].vars[var] = resval
+                    target.vars[var] = modified
 
     def prepare_lines(self, state, lines, comment_sym="#"):
         from jamp.expand import var_string
@@ -613,7 +614,9 @@ class UpdatingAction:
 
             old_target = state.vars.current_target
             state.vars.current_target = self.targets
-            self.check_bound_vars(state)
+            if check_vms():
+                self.modify_vms_paths(state)
+
             line = var_string(line, self.bound_params(), state.vars)
             line = line.replace("$", "$$")
             line = line.replace("<NINJA_SIGIL>", "$")
