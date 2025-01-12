@@ -252,25 +252,37 @@ If a directory has both subdirectories of its own as well as files that need bui
 
 The following variables are set by the SubDir rule and used by the Jambase rules that define file targets:
 
-SEARCH\_SOURCE The SubDir targets (e.g., "TOP src util") are used to construct a pathname (e.g., $(TOP)/src/util),
+* `SEARCH\_SOURCE` The SubDir targets (e.g., "TOP src util") are used to construct a pathname (e.g., $(TOP)/src/util),
 and that pathname is assigned to $(SEARCH\_SOURCE). Rules like Main and Library
-use $(SEARCH\_SOURCE) to set search paths on source files. LOCATE\_SOURCE Initialized by
-the SubDir rule to the same value as $(SEARCH\_SOURCE), unless ALL\_LOCATE\_TARGET is
+use $(SEARCH\_SOURCE) to set search paths on source files.
+
+* `LOCATE\_SOURCE` Initialized by the SubDir rule to the same value as $(SEARCH\_SOURCE), unless ALL\_LOCATE\_TARGET is
 set. $(LOCATE\_SOURCE) is used by rules that build generated source files (e.g., Yacc and Lex)
 to set location of output files. Thus the default location of built source files is the
-directory of the Jamfile that defines them. LOCATE\_TARGET Initalized by the SubDir rule
+directory of the Jamfile that defines them.
+
+* `LOCATE\_TARGET` Initalized by the SubDir rule
 to the same value as $(SEARCH\_SOURCE), unless ALL\_LOCATE\_TARGET is set. $(LOCATE\_TARGET)
 is used by rules that build binary objects (e.g., Main and Library) to set location of output files.
 Thus the default location of built binaray files is the directory of the Jamfile that defines them.
-ALL\_LOCATE\_TARGET If $(ALL\_LOCATE\_TARGET) is set, LOCATE\_SOURCE and and LOCATE\_TARGET are set
+
+* `ALL\_LOCATE\_TARGET` If $(ALL\_LOCATE\_TARGET) is set, LOCATE\_SOURCE and and LOCATE\_TARGET are set
 to $(ALL\_LOCATE\_TARGET) instead of to $(SEARCH\_SOURCE). This can be used to direct built files
 to be written to a location outside of the source tree, and enables building from read-only source trees.
-SOURCE\_GRIST The SubDir targets are formed into a string like "src!util" and that string is
-assigned to SOURCE\_GRIST. Rules that define file targets use $(SOURCE\_GRIST) to set the "grist" attribute on targets. This is used to assure uniqueness of target identifiers where filenames themselves are not unique. For example, the target identifiers of $(TOP)/src/client/main.c and $(TOP)/src/server/main.c would be &lt;src!client&gt;main.c and &lt;src!server&gt;main.c.
 
-The $(LOCATE\_TARGET) and $(SEARCH\_SOURCE) variables are used extensively by rules in Jambase: most rules that generate targets (like Main, Object, etc.) set $(LOCATE) to $(LOCATE\_TARGET) for the targets they generate, and rules that use sources (most all of them) set $(SEARCH) to be $(SEARCH\_SOURCE) for the sources they use.
+* `SOURCE\_GRIST` The SubDir targets are formed into a string like "src!util" and that string is
+assigned to SOURCE\_GRIST. Rules that define file targets use $(SOURCE\_GRIST) to set the "grist" attribute on targets.
+This is used to assure uniqueness of target identifiers where filenames themselves are not unique.
+For example, the target identifiers of $(TOP)/src/client/main.c and
+$(TOP)/src/server/main.c would be &lt;src!client&gt;main.c and &lt;src!server&gt;main.c.
 
-$(LOCATE) and $(SEARCH) are better explained in [The Jam Executable Program](Jam.html) but in brief they tell Jam where to create new targets and where to find existing ones, respectively.
+The $(LOCATE\_TARGET) and $(SEARCH\_SOURCE) variables are used extensively by rules in Jambase:
+most rules that generate targets (like Main, Object, etc.) set $(LOCATE) to $(LOCATE\_TARGET)
+for the targets they generate, and rules that use sources (most all of them) set $(SEARCH)
+to be $(SEARCH\_SOURCE) for the sources they use.
+
+$(LOCATE) and $(SEARCH) are better explained in [The Jam Executable Program](Jam.md) but
+in brief they tell Jam where to create new targets and where to find existing ones, respectively.
 
 Note that you can reset these variables after SubDir sets them. For example, this Jamfile builds a program called gensrc, then runs it to create a source file called new.c:
 
