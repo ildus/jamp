@@ -223,14 +223,14 @@ Pseudotargets are symbolic, and usually represent other targets.
 Most Jambase rules that define file targets also define pseudotargets which are
 dependent on types of file targets. The Jambase pseudotargets are:
 
-*) *exe* Executables linked by the Main or MainFromObjects rules
-*) *lib* Libraries created by the Library or LibraryFromObjects rules
-*) *obj* Compiled objects used to create Main or Library targets
-*) *dirs* Directories created with mkdir
-*) *files* Files copied by File and Bulk rules
-*) *shell* Files copied by Shell rule
-*) *install* Files copied by Install* rules
-*) *uninstall* Removal of targets copied by Install* rules
+- *exe* Executables linked by the Main or MainFromObjects rules
+- *lib* Libraries created by the Library or LibraryFromObjects rules
+- *obj* Compiled objects used to create Main or Library targets
+- *dirs* Directories created with mkdir
+- *files* Files copied by File and Bulk rules
+- *shell* Files copied by Shell rule
+- *install* Files copied by Install* rules
+- *uninstall* Removal of targets copied by Install* rules
 
 In addition, Jambase makes the **jam** default target "all" depend on "exe", "lib", "obj", "files", and "shell".
 
