@@ -1,116 +1,114 @@
 [Jam](http://www.perforce.com/jam/jam.html)
 
-# [Jambase Reference]()
+# Jambase Reference
 
-Jambase is a base set of Jam rules which provide roughly make(1)-like functionality for [**jam**](Jam.html),
+Jambase is a base set of Jam rules which provide roughly make(1)-like functionality
 the Jam executable program. This document, which started out as the Jambase(5) man page,
-is a reference guide to the [rules](#RULES), [pseudotargets](#PSEUDOTARGETS), and [variables](#VARS) defined in Jambase for use in Jamfiles.
+is a reference guide to the [rules](#RULES), [pseudotargets](#PSEUDOTARGETS),
+and [variables](#VARS) defined in Jambase for use in Jamfiles.
 
 For further information see:
 
 - [Using Jamfiles and Jambase](Jamfile.md)
 - [The Jam Executable Program](Jam.md)
 
-Original Jam documentation and source are available from the [Perforce Public Depot](http://public.perforce.com/public/index.html).
-For detailed information about any of the rules summarized below, see the [Jambase](https://github.com/ildus/jamp/blob/main/src/jamp/Jambase) file itself.
+Original Jam documentation and source are available from the
+[Perforce Public Depot](http://public.perforce.com/public/index.html).
 
-* * *
+For detailed information about any of the rules summarized below,
+see the [Jambase](https://github.com/ildus/jamp/blob/main/src/jamp/Jambase) file itself.
 
-## [Jambase Rules]()
+## Jambase Rules
 
-**As** *obj.o* : *source.s* ;
+	As obj.o : source.s ;
 
-> Assemble the file *source.s.* Called by the Object rule.
+Assemble the file *source.s.* Called by the Object rule.
 
-**Bulk** *directory* : *sources* ;
+	Bulk directory : sources ;
 
-> Copies *sources* into *directory.*
+Copies *sources* into *directory.*
 
-**Cc** *object* : *source* ;
+	Cc object : source ;
 
-> Compile the file *source* into *object,* using the C compiler $(CC), its flags $(CCFLAGS) and $(OPTIM), and the header file directories $(HDRS). Called by the Object rule.
+Compile the file *source* into *object,* using the C compiler $(CC), its flags $(CCFLAGS) and $(OPTIM), and the header file directories $(HDRS). Called by the Object rule.
 
-**C++** *obj.o* : *source.cc* ;
+	C++ obj.o : source.cc ;
 
-> Compile the C++ source file *source.cc.* Called by the Object rule.
+Compile the C++ source file *source.cc*. Called by the Object rule.
 
-**Chmod** *target* ;
+	Chmod target ;
 
-> *(Unix and VMS only.)* Change file permissions on *target* to target-specific $(MODE) value set by Link, File, Install\*, and Shell rules.
+*(Unix and VMS only.)* Change file permissions on *target* to target-specific $(MODE) value set by Link, File, Install\*, and Shell rules.
 
-**Clean** *clean* : *targets* ;
+	FDefines defines ;
 
-> Removes existing *targets* when *clean* is built. clean is not a dependency of all, and must be built explicitly for targets to be removed.
+Expands a list of definitions into a list of compiler (or preprocessor) switches (such as -D*symbol*=*val* on Unix) to pass the definitions.
 
-**FDefines** *defines* ;
+	File target : source ;
 
-> Expands a list of definitions into a list of compiler (or preprocessor) switches (such as -D*symbol*=*val* on Unix) to pass the definitions.
+Copies *source* into *target.*
 
-**File** *target* : *source* ;
+	FIncludes dirs ;
 
-> Copies *source* into *target.*
+Expands a list of directories into a list of compiler (or preprocessor) switches (such as -I*dir* on Unix) to add the directories to the header inclusion search path.
 
-**FIncludes** *dirs* ;
+	Fortran obj.o : source.f ;
 
-> Expands a list of directories into a list of compiler (or preprocessor) switches (such as -I*dir* on Unix) to add the directories to the header inclusion search path.
+Compile the Fortran source file *source.f.* Called by the Object rule.
 
-**Fortran** *obj.o* : *source.f* ;
+	FQuote files ;
 
-> Compile the Fortran source file *source.f.* Called by the Object rule.
+Returns each of *files* suitably quoted so as to hide shell metacharacters (such as whitespace and filename matching wildcards) from the shell.
 
-**FQuote** *files* ;
+	GenFile target : image sources ;
 
-> Returns each of *files* suitably quoted so as to hide shell metacharacters (such as whitespace and filename matching wildcards) from the shell.
+Runs the command "*image* *target* *sources*" to create *target* from *sources* and *image*. (where *image* is an executable built by the Main rule.)
 
-**GenFile** *target* : *image* *sources* ;
+	HardLink target : source ;
 
-> Runs the command "*image* *target* *sources*" to create *target* from *sources* and *image*. (where *image* is an executable built by the Main rule.)
+(Unix only) Makes *target* a hard link to *source,* if it isn't one already.
 
-**HardLink** *target* : *source* ;
+	HdrRule source : headers ;
 
-> Makes *target* a hard link to *source,* if it isn't one already. (Unix only.)
+Arranges the proper dependencies when the file *source* includes the files *headers* through the "#include" C preprocessor directive.
 
-**HdrRule** *source* : *headers* ;
+This rule is not intended to be called explicitly. It is called automatically during header scanning on sources handled by the Object rule (e.g., sources in Main or Library rules).
 
-> Arranges the proper dependencies when the file *source* includes the files *headers* through the "#include" C preprocessor directive.
-> 
-> This rule is not intended to be called explicitly. It is called automatically during header scanning on sources handled by the Object rule (e.g., sources in Main or Library rules).
+	InstallBin dir : sources ;
 
-**InstallBin** *dir* : *sources* ;
+Copy *sources* into *dir* with mode $(EXEMODE).
 
-> Copy *sources* into *dir* with mode $(EXEMODE).
+	InstallLib dir : sources ;
 
-**InstallLib** *dir* : *sources* ;
+Copy *sources* into *dir* with mode $(FILEMODE).
 
-> Copy *sources* into *dir* with mode $(FILEMODE).
+	InstallMan dir : sources ;
 
-**InstallMan** *dir* : *sources* ;
+Copy *sources* into the appropriate subdirectory of *dir* with mode $(FILEMODE). The subdirectory is man*s,* where *s* is the suffix of each of sources.
 
-> Copy *sources* into the appropriate subdirectory of *dir* with mode $(FILEMODE). The subdirectory is man*s,* where *s* is the suffix of each of sources.
+	InstallShell dir : sources ;
 
-**InstallShell** *dir* : *sources* ;
+Copy *sources* into *dir* with mode $(SHELLMODE).
 
-> Copy *sources* into *dir* with mode $(SHELLMODE).
+	Lex source.c : source.l ;
 
-**Lex** *source.c* : *source.l* ;
+Process the lex(1) source file *source.l* and rename the lex.yy.c to *source.c.* Called by the Object rule.
 
-> Process the lex(1) source file *source.l* and rename the lex.yy.c to *source.c.* Called by the Object rule.
+	Library library : sources ;
 
-**Library** *library* : *sources* ;
+Compiles *sources* and archives them into *library.* Calls Objects and LibraryFromObjects.
+ 
+If Library is invoked with no suffix on *library*, the $(SUFLIB) suffix is used.
 
-> Compiles *sources* and archives them into *library.* The intermediate *objects* are deleted. Calls Objects and LibraryFromObjects.
-> 
-> If Library is invoked with no suffix on *library*, the $(SUFLIB) suffix is used.
+	LibraryFromObjects library : objects ;
 
-**LibraryFromObjects** *library* : *objects* ;
+Archives *objects* into *library.*
 
-> Archives *objects* into *library.* The *objects* are then deleted.
-> 
-> If *library* has no suffix, the $(SUFLIB) suffix is used.
+If *library* has no suffix, the $(SUFLIB) suffix is used.
 
-**Link** *image* : *objects* ;
+	Link image : objects ;
 
-> Links *image* from *objects* and sets permissions on *image* to $(EXEMODE). *Image* must be actual filename; suffix is not supplied. Called by Main.
+Links *image* from *objects* and sets permissions on *image* to $(EXEMODE). *Image* must be actual filename; suffix is not supplied. Called by Main.
 
 **LinkLibraries** *image* : *libraries* ;
 
