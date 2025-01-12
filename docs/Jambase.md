@@ -97,7 +97,7 @@ Process the lex(1) source file *source.l* and rename the lex.yy.c to *source.c.*
 	Library library : sources ;
 
 Compiles *sources* and archives them into *library.* Calls Objects and LibraryFromObjects.
- 
+
 If Library is invoked with no suffix on *library*, the $(SUFLIB) suffix is used.
 
 	LibraryFromObjects library : objects ;
@@ -110,430 +110,434 @@ If *library* has no suffix, the $(SUFLIB) suffix is used.
 
 Links *image* from *objects* and sets permissions on *image* to $(EXEMODE). *Image* must be actual filename; suffix is not supplied. Called by Main.
 
-**LinkLibraries** *image* : *libraries* ;
+    LinkLibraries image : libraries ;
 
-> Makes *image* depend on *libraries* and includes them during the linking.
-> 
-> *Image* may be referenced without a suffix in this rule invocation; LinkLibraries supplies the suffix.
+Makes *image* depend on *libraries* and includes them during the linking.
 
-**Main** *image* : *sources* ;
+*Image* may be referenced without a suffix in this rule invocation; LinkLibraries supplies the suffix.
 
-> Compiles *sources* and links them into *image.* Calls Objects and MainFromObjects.
-> 
-> *Image* may be referenced without a suffix in this rule invocation; Main supplies the suffix.
+    Main image : sources ;
 
-**MainFromObjects** *image* : *objects* ;
+Compiles *sources* and links them into *image.* Calls Objects and MainFromObjects.
 
-> Links *objects* into *image.* Dependency of exe. MainFromObjects supplies the suffix on *image* filename.
+*Image* may be referenced without a suffix in this rule invocation; Main supplies the suffix.
 
-**MakeLocate** *target* : *dir* ;
+    MainFromObjects image : objects ;
 
-> Creates *dir* and causes *target* to be built into *dir*.
+Links *objects* into *image.* Dependency of exe. MainFromObjects supplies the suffix on *image* filename.
 
-**MkDir** *dir* ;
+    MakeLocate target : dir ;
 
-> Creates *dir* and its parent directories.
+Creates *dir* and causes *target* to be built into *dir*.
 
-**Object** *object* : *source* ;
+    MkDir dir ;
 
-> Compiles a *single* source file source into *object.* The Main and Library rules use this rule to compile source files.
-> 
-> Causes *source* to be scanned for "#include" directives and calls HdrRule to make all included files dependedencies of *object*.
-> 
-> Calls one of the following rules to do the actual compiling, depending on the suffix of source:
-> 
-> ```
-> 		     *.c:   Cc 
-		     *.cc:  C++ 
-		     *.cpp: C++
-		     *.C:   C++ 
-		     *.l:   Lex 
-		     *.y:   Yacc
-		     *.*:   UserObject
-> ```
+Creates *dir* and its parent directories.
 
-**ObjectC++Flags** *source* : *flags* ;
-**ObjectCcFlags** *source* : *flags* ;
+    Object object : source ;
 
-> Add *flags* to the source-specific value of $(CCFLAGS) or $(C++FLAGS) when compiling *source.* Any file suffix on *source* is ignored.
+Compiles a *single* source file source into *object.* The Main and Library rules use this rule to compile source files.
 
-**ObjectDefines** *object* : *defines* ;
+Causes *source* to be scanned for "#include" directives and calls HdrRule to make all included files dependedencies of *object*.
 
-> Adds preprocessor symbol definitions to the (gristed) target-specific $(CCDEFS) for the *object*.
+Calls one of the following rules to do the actual compiling, depending on the suffix of source:
 
-**ObjectHdrs** *source* : *dirs* ;
+```
+         *.c:   Cc
+         *.cc:  C++
+         *.cpp: C++
+         *.C:   C++
+         *.l:   Lex
+         *.y:   Yacc
+         *.*:   UserObject
+```
 
-> Add *dirs* to the source-specific value of $(HDRS) when scanning and compiling *source.* Any file suffix on *source* is ignored.
+    ObjectC++Flags source : *flags* ;
+    ObjectCcFlags source : *flags* ;
 
-**Objects** *sources* ;
+Add *flags* to the source-specific value of $(CCFLAGS) or $(C++FLAGS) when compiling *source.* Any file suffix on *source* is ignored.
 
-> For each source file in *sources,* calls Object to compile the source file into a similarly named object file.
+    ObjectDefines *object* : *defines* ;
 
-**RmTemps** *targets* : *sources* ;
+Adds preprocessor symbol definitions to the (gristed) target-specific $(CCDEFS) for the *object*.
 
-> Marks *sources* as temporary with the TEMPORARY rule, and deletes *sources* once *targets* are built. Must be the last rule invoked on *targets.* Used internally by LibraryFromObjects rule.
+    ObjectHdrs source : dirs ;
 
-**Setuid** *images* ;
+Add *dirs* to the source-specific value of $(HDRS) when scanning and compiling *source.* Any file suffix on *source* is ignored.
 
-> Sets the setuid bit on each of *images* after linking. (Unix only.)
+    Objects sources ;
 
-**SoftLink** *target* : *source* ;
+For each source file in *sources,* calls Object to compile the source file into a similarly named object file.
 
-> Makes *target* a symbolic link to *source,* if it isn't one already. (Unix only.)
+    Setuid *images* ;
 
-**SubDir** *TOP d1 ... dn* ;
+Sets the setuid bit on each of *images* after linking. (Unix only.)
 
-> Sets up housekeeping for the source files located in *`$(TOP)/d1/.../dn`* :
-> 
-> - Reads in rules file associated with *TOP*, if it hasn't already been read.
-> - Initializes variables for search paths, output directories, compiler flags, and grist, using *d1 ... dn* tokens.
-> 
-> *TOP* is the name of a variable; *d1* thru *dn* are elements of a directory path.
+    SoftLink target : source ;
 
-**SubDirC++Flags** *flags* ;  
-**SubDirCcFlags** *flags* ;
+Makes *target* a symbolic link to *source,* if it isn't one already. (Unix only.)
 
-> Adds *flags* to the compiler flags for source files in SubDir's directory.
+    SubDir *TOP d1 ... dn* ;
 
-**SubDirHdrs** *d1 ... dn* ;
+Sets up housekeeping for the source files located in *`$(TOP)/d1/.../dn`* :
 
-> Adds the path *d1/.../dn/* to the header search paths for source files in SubDir's directory. *d1* through *dn* are elements of a directory path.
+- Reads in rules file associated with *TOP*, if it hasn't already been read.
+- Initializes variables for search paths, output directories, compiler flags, and grist, using *d1 ... dn* tokens.
 
-**SubInclude** *VAR d1 ... dn* ;
+*TOP* is the name of a variable; *d1* thru *dn* are elements of a directory path.
 
-> Reads the Jamfile in *`$(VAR)/d1/.../dn/`* .
+    SubDirC++Flags *flags* ;
+    SubDirCcFlags *flags* ;
 
-**Shell** *image* : *source* ;
+Adds *flags* to the compiler flags for source files in SubDir's directory.
 
-> Copies *source* into the executable sh(1) script *image.* Ensures that the first line of the script is $(SHELLHEADER) (default #!/bin/sh).
+    SubDirHdrs *d1 ... dn* ;
 
-**Undefines** *images* : *symbols* ;
+Adds the path *d1/.../dn/* to the header search paths for source files in SubDir's directory. *d1* through *dn* are elements of a directory path.
 
-> Adds flags to mark *symbols* as undefined on link command for *images*. *Images* may be referenced unsuffixed; the Undefines rule supplies the suffix.
+    SubInclude *VAR d1 ... dn* ;
 
-**UserObject** *object* : *source* ;
+Reads the Jamfile in *`$(VAR)/d1/.../dn/`* .
 
-> This rule is called by Object for source files with unknown suffixes, and should be defined in Jamrules with a user-provided rule to handle the source file types not handled by the Object rule. The Jambase UserObject rule merely issues a complaint when it encounters *source* with files suffixes it does not recognize.
+    Shell image : source ;
 
-**Yacc** *source.c* : *source.y* ;
+Copies *source* into the executable sh(1) script *image.* Ensures that the first line of the script is $(SHELLHEADER) (default #!/bin/sh).
 
-> Process the yacc(1) file *source.y* and renamed the resulting y.tab.c and y.tab.h to *source.c.* Produces a y.tab.h and renames it to *source.h.* Called by the **Object** rule.
+    Undefines images : symbols ;
 
-* * *
+Adds flags to mark *symbols* as undefined on link command for *images*. *Images* may be referenced unsuffixed; the Undefines rule supplies the suffix.
 
-### [Jambase Pseudotargets]()
+    UserObject *object* : source ;
 
-There are two kinds of Jam targets: file targets and pseudotargets. File targets are objects that can be found in the filesystem. Pseudotargets are symbolic, and usually represent other targets. Most Jambase rules that define file targets also define pseudotargets which are dependent on types of file targets. The Jambase pseudotargets are:
+This rule is called by Object for source files with unknown suffixes, and should be defined in Jamrules with a user-provided rule to handle the source file types not handled by the Object rule. The Jambase UserObject rule merely issues a complaint when it encounters *source* with files suffixes it does not recognize.
 
-exe Executables linked by the Main or MainFromObjects rules lib Libraries created by the Library or LibraryFromObjects rules obj Compiled objects used to create Main or Library targets dirs Directories where target files are written file Files copied by File and Bulk rules shell Files copied by Shell rule clean Removal of built targets (except files copied by Install* rules) install Files copied by Install* rules uninstall Removal of targets copied by Install* rules
+    Yacc *source.c* : *source.y* ;
+
+Process the yacc(1) file *source.y* and renamed the resulting y.tab.c and y.tab.h to *source.c.* Produces a y.tab.h and renames it to *source.h.* Called by the **Object** rule.
+
+### Jambase Pseudotargets
+
+There are two kinds of Jam targets: file targets and pseudotargets.
+File targets are objects that can be found in the filesystem.
+Pseudotargets are symbolic, and usually represent other targets.
+Most Jambase rules that define file targets also define pseudotargets which are
+dependent on types of file targets. The Jambase pseudotargets are:
+
+*) *exe* Executables linked by the Main or MainFromObjects rules
+*) *lib* Libraries created by the Library or LibraryFromObjects rules
+*) *obj* Compiled objects used to create Main or Library targets
+*) *dirs* Directories created with mkdir
+*) *files* Files copied by File and Bulk rules
+*) *shell* Files copied by Shell rule
+*) *install* Files copied by Install* rules
+*) *uninstall* Removal of targets copied by Install* rules
 
 In addition, Jambase makes the **jam** default target "all" depend on "exe", "lib", "obj", "files", and "shell".
 
 * * *
 
-### [Jambase Variables]()
+### Jambase Variables
 
 Most of the following variables have default values for each platform; refer to the Jambase file to see what those defaults are.
 
-ALL\_LOCATE\_TARGET
+    ALL\_LOCATE\_TARGET
 
-> Alternative location of built targets. By default, Jambase rules locate built targets in the source tree. By setting $(ALL\_LOCATE\_TARGET) in Jamrules, you can cause **jam** to write built targets to a location outside the source tree.
+Alternative location of built targets. By default, Jambase rules locate built targets in the source tree. By setting $(ALL\_LOCATE\_TARGET) in Jamrules, you can cause **jam** to write built targets to a location outside the source tree.
 
-AR
+    AR
 
-> The archive command used to update Library and LibraryFromObjects targets.
+The archive command used to update Library and LibraryFromObjects targets.
 
-AS
+    AS
 
-> The assembler for As rule targets.
+The assembler for As rule targets.
 
-ASFLAGS
+    ASFLAGS
 
-> Flags handed to the assembler for As.
+Flags handed to the assembler for As.
 
-AWK
+    AWK
 
-> The name of awk interpreter, used when copying a shell script for the Shell rule.
+The name of awk interpreter, used when copying a shell script for the Shell rule.
 
-BCCROOT
+    BCCROOT
 
-> Selects Borland compile and link actions on NT.
+Selects Borland compile and link actions on NT.
 
-BINDIR
+    BINDIR
 
-> Not longer used. (I.e., used only for backward compatibility with the obsolete INSTALLBIN rule.)
+Not longer used. (I.e., used only for backward compatibility with the obsolete INSTALLBIN rule.)
 
-CC
+    CC
 
-> C compiler used for Cc rule targets.
+C compiler used for Cc rule targets.
 
-CCFLAGS
+    CCFLAGS
 
-> Compile flags for Cc rule targets. The Cc rule sets target-specific $(CCFLAGS) values on its targets.
+Compile flags for Cc rule targets. The Cc rule sets target-specific $(CCFLAGS) values on its targets.
 
-C++
+    C++
 
-> C++ compiler used for C++ rule targets.
+C++ compiler used for C++ rule targets.
 
-C++FLAGS
+    C++FLAGS
 
-> Compile flags for C++ rule targets. The C++ rule sets target-specific $(C++FLAGS) values on its targets.
+Compile flags for C++ rule targets. The C++ rule sets target-specific $(C++FLAGS) values on its targets.
 
-CHMOD
+    CHMOD
 
-> Program (usually chmod(1)) used to set file permissions for Chmod rule.
+Program (usually chmod(1)) used to set file permissions for Chmod rule.
 
-CP
+    CP
 
-> The file copy program, used by File and Install* rules.
+The file copy program, used by File and Install* rules.
 
-CRELIB
+    CRELIB
 
-> If set, causes the Library rule to invoke the CreLib rule on the target library before attempting to archive any members, so that the library can be created if needed.
+If set, causes the Library rule to invoke the CreLib rule on the target library before attempting to archive any members, so that the library can be created if needed.
 
-CW
+    CW
 
-> On Macintosh, the root of the Code Warrior Pro 5 directory.
+On Macintosh, the root of the Code Warrior Pro 5 directory.
 
-DEFINES
+    DEFINES
 
-> Preprocessor symbol definitions for Cc and C++ rule targets. The Cc and C++ rules set target-specific $(CCDEFS) values on their targets, based on $(DEFINES). (The "indirection" here is required to support compilers, like VMS, with baroque command line syntax for setting symbols).
+Preprocessor symbol definitions for Cc and C++ rule targets. The Cc and C++ rules set target-specific $(CCDEFS) values on their targets, based on $(DEFINES). (The "indirection" here is required to support compilers, like VMS, with baroque command line syntax for setting symbols).
 
-DOT
+    DOT
 
-> The operating system-specific name for the current directory.
+The operating system-specific name for the current directory.
 
-DOTDOT
+    DOTDOT
 
-> The operating system-specific name for the parent directory.
+The operating system-specific name for the parent directory.
 
-EXEMODE
+    EXEMODE
 
-> Permissions for executables linked with Link, Main, and MainFromObjects, on platforms with a Chmod action.
+Permissions for executables linked with Link, Main, and MainFromObjects, on platforms with a Chmod action.
 
-FILEMODE
+    FILEMODE
 
-> Permissions for files copied by File or Bulk, on platforms with a Chmod action.
+Permissions for files copied by File or Bulk, on platforms with a Chmod action.
 
-FORTRAN
+    FORTRAN
 
-> The Fortran compiler used by Fortran rule.
+The Fortran compiler used by Fortran rule.
 
-FORTRANFLAGS
+    FORTRANFLAGS
 
-> Fortran compiler flags for Fortran rule targets.
+Fortran compiler flags for Fortran rule targets.
 
-GROUP
+    GROUP
 
-> *(Unix only.)* The group owner for Install* rule targets.
+*(Unix only.)* The group owner for Install* rule targets.
 
-HDRGRIST
+    HDRGRIST
 
-> If set, used by the HdrRule to distinguish header files with the same name in diffrent directories.
+If set, used by the HdrRule to distinguish header files with the same name in diffrent directories.
 
-HDRPATTERN
+    HDRPATTERN
 
-> A regular expression pattern that matches C preprocessor "#include" directives in source files and returns the name of the included file.
+A regular expression pattern that matches C preprocessor "#include" directives in source files and returns the name of the included file.
 
-HDRRULE
+    HDRRULE
 
-> Name of the rule to invoke with the results of header file scanning. Default is "HdrRule".
-> 
-> This is a jam-special variable. If both HDRRULE and HDRSCAN are set on a target, that target will be scanned for lines matching $(HDRSCAN), and $(HDDRULE) will be invoked on included files found in the matching $(HDRSCAN) lines.
+Name of the rule to invoke with the results of header file scanning. Default is "HdrRule".
 
-HDRS
+This is a jam-special variable. If both HDRRULE and HDRSCAN are set on a target, that target will be scanned for lines matching $(HDRSCAN), and $(HDDRULE) will be invoked on included files found in the matching $(HDRSCAN) lines.
 
-> Directories to be searched for header files. This is used by the Object rule to:
-> 
-> - set up search paths for finding files returned by header scans
-> - add -I flags on compile commands
-> 
-> (See STDHDRS.)
+    HDRS
 
-HDRSCAN
+Directories to be searched for header files. This is used by the Object rule to:
 
-> Regular expression pattern to use for header file scanning. The Object rule sets this to $(HDRPATTERN). This is a jam-special variable; see HDRRULE.
+- set up search paths for finding files returned by header scans
+- add -I flags on compile commands
 
-HDRSEARCH
+(See STDHDRS.)
 
-> Used by the HdrRule to fix the list of directories where header files can be found for a given source file.
+    HDRSCAN
 
-INSTALLGRIST
+Regular expression pattern to use for header file scanning. The Object rule sets this to $(HDRPATTERN). This is a jam-special variable; see HDRRULE.
 
-> Used by the Install* rules to grist paths to installed files; defaults to "installed".
+    HDRSEARCH
 
-JAMFILE
+Used by the HdrRule to fix the list of directories where header files can be found for a given source file.
 
-> Default is "Jamfile"; the name of the user-written rules file found in each source directory.
+    INSTALLGRIST
 
-JAMRULES
+Used by the Install* rules to grist paths to installed files; defaults to "installed".
 
-> Default is "Jamrules"; the name of a rule definition file to be read in at the first SubDir rule invocation.
+    JAMFILE
 
-KEEPOBJS
+Default is "Jamfile"; the name of the user-written rules file found in each source directory.
 
-> If set, tells the LibraryFromObjects rule not to delete object files once they are archived.
+    JAMRULES
 
-LEX
+Default is "Jamrules"; the name of a rule definition file to be read in at the first SubDir rule invocation.
 
-> The lex(1) command and flags.
+    KEEPOBJS
 
-LIBDIR
+If set, tells the LibraryFromObjects rule not to delete object files once they are archived.
 
-> Not longer used. (I.e., used only for backward compatibility with the obsolete INSTALLLIB rule.)
+    LEX
 
-LINK
+The lex(1) command and flags.
 
-> The linker. Defaults to $(CC).
+    LIBDIR
 
-LINKFLAGS
+Not longer used. (I.e., used only for backward compatibility with the obsolete INSTALLLIB rule.)
 
-> Flags handed to the linker. Defaults to $(CCFLAGS).
+    LINK
 
-LINKLIBS
+The linker. Defaults to $(CC).
 
-> List of external libraries to link with. The target image does not depend on these libraries.
+    LINKFLAGS
 
-LN
+Flags handed to the linker. Defaults to $(CCFLAGS).
 
-> The hard link command for HardLink rule.
+    LINKLIBS
 
-LOCATE\_SOURCE
+List of external libraries to link with. The target image does not depend on these libraries.
 
-> Used to set the location of generated source files. The Yacc, Lex, and GenFile rules set LOCATE on their targets to $(LOCATE\_SOURCE). $(LOCATE\_SOURCE) is initialized by the SubDir rule to the source directory itself. (Also, see ALL\_LOCATE\_TARGET.)
+    LN
 
-LOCATE\_TARGET
+The hard link command for HardLink rule.
 
-> Used to set the location of built binary targets. The Object rule, and hence the Main and Library rules, set LOCATE on their targets to $(LOCATE\_TARGET). $(LOCATE\_TARGET) is initialized by the SubDir rule to the source directory itself. (See ALL\_LOCATE\_TARGET.)
+    LOCATE\_SOURCE
 
-MANDIR
+Used to set the location of generated source files. The Yacc, Lex, and GenFile rules set LOCATE on their targets to $(LOCATE\_SOURCE). $(LOCATE\_SOURCE) is initialized by the SubDir rule to the source directory itself. (Also, see ALL\_LOCATE\_TARGET.)
 
-> Not longer used. (I.e., used only for backward compatibility with the obsolete INSTALLMAN rule.)
+    LOCATE\_TARGET
 
-MKDIR
+Used to set the location of built binary targets. The Object rule, and hence the Main and Library rules, set LOCATE on their targets to $(LOCATE\_TARGET). $(LOCATE\_TARGET) is initialized by the SubDir rule to the source directory itself. (See ALL\_LOCATE\_TARGET.)
 
-> The 'create directory' command used for the MkDir rule.
+    MANDIR
 
-MODE
+Not longer used. (I.e., used only for backward compatibility with the obsolete INSTALLMAN rule.)
 
-> The target-specific file mode (permissions) for targets of the Shell, Setuid, Link, and Install* rules. Used by the Chmod action; hence relevant to NT and VMS only.
+    MKDIR
 
-MSVC
+The 'create directory' command used for the MkDir rule.
 
-> Selects Microsoft Visual C 16-bit compile &amp; link actions on NT.
+    MODE
 
-MSVCNT
+The target-specific file mode (permissions) for targets of the Shell, Setuid, Link, and Install* rules. Used by the Chmod action; hence relevant to NT and VMS only.
 
-> Selects Microsoft Visual C NT 5.0 and earlier compile &amp; link actions on NT.
+    MSVC
 
-MSVCDIR
+Selects Microsoft Visual C 16-bit compile &amp; link actions on NT.
 
-> Selects Microsoft Visual C NT 6.0 and later compile &amp; link actions on NT. These are identical to versions 5.0 and earlier -- it just seems Microsoft changed the name of the variable.
+    MSVCNT
 
-MV
+Selects Microsoft Visual C NT 5.0 and earlier compile &amp; link actions on NT.
 
-> The file rename command and options.
+    MSVCDIR
 
-NEEDLIBS
+Selects Microsoft Visual C NT 6.0 and later compile &amp; link actions on NT. These are identical to versions 5.0 and earlier -- it just seems Microsoft changed the name of the variable.
 
-> The list of libraries used when linking an executable. Used by the Link rule.
+    MV
 
-NOARSCAN
+The file rename command and options.
 
-> If set, indicates that library members' timestamps can't be found, and prevents the individual objects from being deleted, so that their timestamps can be used instead.
+    NEEDLIBS
 
-NOARUPDATE
+The list of libraries used when linking an executable. Used by the Link rule.
 
-> If set, indicates that libraries can't be updated, but only created whole.
+    NOARSCAN
 
-OPTIM
+If set, indicates that library members' timestamps can't be found, and prevents the individual objects from being deleted, so that their timestamps can be used instead.
 
-> The C compiler flag for optimization, used by Cc and C++ rules.
+    NOARUPDATE
 
-OSFULL
+If set, indicates that libraries can't be updated, but only created whole.
 
-> The concatenation of $(OS)$(OSVER)$(OSPLAT), used when jam builds itself to determine the target binary directory. $(OS) and $(OSPLAT) are determined by jam at its compile time (in jam.h). $(OSVER) can optionally be set by the user.
+    OPTIM
 
-OWNER
+The C compiler flag for optimization, used by Cc and C++ rules.
 
-> The owner of installed files. Used by Install* rules.
+    OSFULL
 
-RANLIB
+The concatenation of $(OS)$(OSVER)$(OSPLAT), used when jam builds itself to determine the target binary directory. $(OS) and $(OSPLAT) are determined by jam at its compile time (in jam.h). $(OSVER) can optionally be set by the user.
 
-> The name of the ranlib command. If set, causes the Ranlib action to be applied after the Archive action to targets of the Library rule.
+    OWNER
 
-RELOCATE
+The owner of installed files. Used by Install* rules.
 
-> If set, tells the Cc rule to move the output object file to its target directory because the cc command has a broken -o option.
+    RANLIB
 
-RM
+The name of the ranlib command. If set, causes the Ranlib action to be applied after the Archive action to targets of the Library rule.
 
-> The command and options to remove a file.
+    RELOCATE
 
-SEARCH\_SOURCE
+If set, tells the Cc rule to move the output object file to its target directory because the cc command has a broken -o option.
 
-> The directory to find sources listed with Main, Library, Object, Bulk, File, Shell, InstallBin, InstallLib, and InstallMan rules. This works by setting the jam-special variable SEARCH to the value of $(SEARCH\_SOURCE) for each of the rules' sources. The SubDir rule initializes SEARCH\_SOURCE for each directory.
+    RM
 
-SHELLHEADER
+The command and options to remove a file.
 
-> A string inserted to the first line of every file created by the Shell rule.
+    SEARCH\_SOURCE
 
-SHELLMODE
+The directory to find sources listed with Main, Library, Object, Bulk, File, Shell, InstallBin, InstallLib, and InstallMan rules. This works by setting the jam-special variable SEARCH to the value of $(SEARCH\_SOURCE) for each of the rules' sources. The SubDir rule initializes SEARCH\_SOURCE for each directory.
 
-> Permissions for files installed by Shell rule.
+    SHELLHEADER
 
-SOURCE\_GRIST
+A string inserted to the first line of every file created by the Shell rule.
 
-> Set by the SubDir to a value derived from the directory name, and used by Objects and related rules as 'grist' to perturb file names.
+    SHELLMODE
 
-STDHDRS
+Permissions for files installed by Shell rule.
 
-> Directories where headers can be found without resorting to using the flag to the C compiler. The $(STDHDRS) directories are used to find headers during scanning, but are not passed to the compiler commands as -I paths.
+    SOURCE\_GRIST
 
-SUBDIR
+Set by the SubDir to a value derived from the directory name, and used by Objects and related rules as 'grist' to perturb file names.
 
-> The path from the current directory to the directory last named by the SubDir rule.
+    STDHDRS
 
-TOP
+Directories where headers can be found without resorting to using the flag to the C compiler. The $(STDHDRS) directories are used to find headers during scanning, but are not passed to the compiler commands as -I paths.
 
-> The path from the current directory to the directory that has the Jamrules file. Used by the SubDir rule.
+    SUBDIR
 
-SUFEXE
+The path from the current directory to the directory last named by the SubDir rule.
 
-> The suffix for executable files, if none provided. Used by the Main rule.
+    TOP
 
-SUFLIB
+The path from the current directory to the directory that has the Jamrules file. Used by the SubDir rule.
 
-> The suffix for libraries. Used by the Library and related rules.
+    SUFEXE
 
-SUFOBJ
+The suffix for executable files, if none provided. Used by the Main rule.
 
-> The suffix for object files. Used by the Objects and related rules.
+    SUFLIB
 
-UNDEFFLAG
+The suffix for libraries. Used by the Library and related rules.
 
-> The flag prefixed to each symbol for the Undefines rule (i.e., the compiler flag for undefined symbols).
+    SUFOBJ
 
-WATCOM
+The suffix for object files. Used by the Objects and related rules.
 
-> Selects Watcom compile and link actions on OS2.
+    UNDEFFLAG
 
-YACC
+The flag prefixed to each symbol for the Undefines rule (i.e., the compiler flag for undefined symbols).
 
-> The yacc(1) command.
+    WATCOM
 
-YACCFILES
+Selects Watcom compile and link actions on OS2.
 
-> The base filename generated by yacc(1).
+    YACC
 
-YACCFLAGS
+The yacc(1) command.
 
-> The yacc(1) command flags.
+    YACCFILES
 
-YACCGEN
+The base filename generated by yacc(1).
 
-> The suffix used on generated yacc(1) output.
+    YACCFLAGS
+
+The yacc(1) command flags.
+
+    YACCGEN
+
+The suffix used on generated yacc(1) output.
 
 Converted to markdown from Jambase.html
 Copyright 1993-2002 Christopher Seiwald and Perforce Software, Inc.
-Comments to [info@perforce.com](mailto:info@perforce.com)
