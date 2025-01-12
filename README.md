@@ -16,13 +16,48 @@ Differences from original Jam
 * Regular expressions are Python based.
 * `Clean` actions are ignored in favour of `ninja -t clean`.
 
-Installation and usage
------------------------
+Quick start
+-----------
 
+Install:
+
+    # install jamp
     pip3 install github.com/ildus/jamp
-    cd $src # to directory with Jamfile
-    jamp # or python3 -m jamp
-    ninja
+
+    # install ninja using your package manager
+    dnf install ninja
+    # or pacman -Syu ninja
+
+For example we have this directory structure with a library and a main executable, and the
+main executable uses math functions:
+
+    src
+        main.c
+    lib
+        print.c
+    include
+        common.h
+
+    Jamfile
+
+Corresponding Jamfile:
+
+    HDRS = "include" ; # include should be quoted, it's a keyword in Jam
+    Library libprint : lib/print.c ;
+    Main app : src/main.c ;
+    LinkLibraries app : libprint ;
+    LINKLIBS on app = -lm ;
+
+So to get the executable we only need to run this commands:
+
+    jamp && ninja
+
+Look at the tests dir to see more complex usage examples.
+
+Documentation
+-------------
+
+See the `docs` directory.
 
 OpenVMS notes
 ---------------
