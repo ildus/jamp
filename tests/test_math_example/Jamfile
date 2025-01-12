@@ -1,0 +1,5 @@
+HDRS = "include" ;
+Library libprint : lib/print.c ;
+Main app : src/main.c ;
+LinkLibraries app : libprint ;
+LINKLIBS on app = -lm ;

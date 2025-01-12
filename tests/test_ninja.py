@@ -87,3 +87,16 @@ def test_simple_app():
         assert os.path.exists("libsay.a")
         sp.run(["ninja", "-t", "clean"])
         assert not os.path.exists("app")
+
+
+def test_math_example():
+    d = "tests/test_math_example"
+    with rel(d):
+        main_cli()
+        sp.run(["ninja", "-t", "clean"])
+        sp.check_output("ninja")
+        assert os.path.exists("app")
+        assert os.path.exists("libprint.a")
+        sp.run(["ninja", "-t", "clean"])
+        assert not os.path.exists("app")
+        assert not os.path.exists("libprint.a")
