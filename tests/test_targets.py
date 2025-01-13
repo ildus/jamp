@@ -1,5 +1,6 @@
 import tempfile
 import os
+from os import sep as S
 
 from jamp.classes import Target, State
 from jamp.executors import run
@@ -9,7 +10,7 @@ def test_global_locate_search():
     state = State()
     target = Target.bind(state, "test.c")
     state.vars.set("LOCATE", ["/tmp"])
-    assert target.search(state) == "/tmp/test.c"
+    assert target.search(state) == f"{S}tmp{S}test.c"
 
     state.vars.set("LOCATE", [])
 
@@ -27,7 +28,7 @@ def test_target_locate_search():
     state = State()
     target = Target.bind(state, "test.c")
     target.vars["LOCATE"] = ["/tmp"]
-    assert target.search(state) == "/tmp/test.c"
+    assert target.search(state) == f"{S}tmp{S}test.c"
 
     target.vars["LOCATE"] = []
 

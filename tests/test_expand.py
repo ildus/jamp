@@ -1,3 +1,5 @@
+from os import sep as S
+
 from jamp.expand import var_expand, var_edit_parse, MAGIC_COLON as MC
 from jamp.paths import Pathname
 
@@ -136,17 +138,17 @@ def test_edits():
 
 def test_paths():
     p = Pathname()
-    orig = "/one/two/three/file.c"
+    orig = f"{S}one{S}two{S}three{S}file.c"
     p.parse(orig)
     assert p.build() == orig
     p.keep_only_parent()
-    assert p.build() == "/one/two/three"
+    assert p.build() == f"{S}one{S}two{S}three"
 
-    orig = "<g1>one/two/three/file.c<mem>"
+    orig = f"<g1>one{S}two{S}three{S}file.c<mem>"
     p.parse(orig)
     assert p.build() == orig
-    p.root = "/add/"
-    assert p.build() == "<g1>/add/one/two/three/file.c<mem>"
+    p.root = f"{S}add{S}"
+    assert p.build() == f"<g1>{S}add{S}one{S}two{S}three{S}file.c<mem>"
 
 
 def test_var_edits():

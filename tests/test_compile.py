@@ -1,3 +1,5 @@
+import os
+
 from jamp.jam_syntax import parse
 from jamp.compile import compile
 from jamp.executors import run
@@ -538,7 +540,7 @@ def test_glob_rule():
     """
     state = State()
     run(state, state.parse_and_compile(rules))
-    expected = set("./pytest.ini ./conftest.py\n".strip().split(" "))
+    expected = set(f".{os.sep}pytest.ini .{os.sep}conftest.py\n".strip().split(" "))
     cp = set(Builtins.output.strip().split(" "))
     Builtins.clear_output()
     assert cp == expected
