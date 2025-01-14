@@ -245,9 +245,11 @@ class Lexer:
             if res in keywords:
                 tok.type = keywords[res]
 
-            if tok.type == "INCLUDE" and not (
-                self.prevtoken is None or self.prevtoken.type == "SEMICOLON"
-            ):
-                tok.type == "ARG"
+            if tok.type == "INCLUDE":
+                if not (
+                    self.prevtoken is None
+                    or self.prevtoken.type in ("SEMICOLON", "LBRACE", "RBRACE")
+                ):
+                    tok.type = "ARG"
 
         return self.next_token(tok)
