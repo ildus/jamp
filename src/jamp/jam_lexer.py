@@ -67,6 +67,7 @@ class Lexer:
         self.restart()
         self.lines = []
         self.filename = filename
+        self.prevtoken = None
 
     def set_scanmode(self, mode):
         self.scanmode = mode
@@ -158,6 +159,7 @@ class Lexer:
                 self.set_scanmode(SCAN_NORMAL)
                 self.actions_block = False
 
+        self.prevtoken = tok
         return tok
 
     def restart(self):
@@ -242,5 +244,10 @@ class Lexer:
         if not notkeyword and not (res[0].isalpha() and self.scanmode == SCAN_PUNCT):
             if res in keywords:
                 tok.type = keywords[res]
+
+            if tok.type == "INCLUDE" and not (
+                self.prevtoken is None or self.prevtoken.type == "SEMICOLON"
+            ):
+                tok.type == "ARG"
 
         return self.next_token(tok)
