@@ -5,12 +5,12 @@ This is reimplementation of Jam build system
 ([link](https://swarm.workshop.perforce.com/projects/perforce_software-jam))
 on Python.
 
-Supported platforms: Linux (Unix), OpenVMS
+Supported platforms: Linux (Unix), OpenVMS.
 
 Differences from original Jam
 -----------------------------
 
-* Can't build itself (requires `ninja`, `samurai` or other `ninja` compatible builder).
+* Use `ninja`, `samurai` or other `ninja` compatible builder for the actual executables building.
 * `mkdir` is a builtin command, collects all created dirs to `dirs` target.
 * Builtin rules are case-insensitive (Echo and ECHO are same).
 * Regular expressions are Python based.
