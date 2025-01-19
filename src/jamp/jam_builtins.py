@@ -60,7 +60,11 @@ class Builtins:
 
         paths = expand(state, paths_arg)
 
-        dirs_target = state.targets["dirs"]
+        dirs_target = state.targets.get("dirs")
+        if dirs_target is None:
+            print("fatal error, dirs target not found")
+            return
+
         dirs_target.is_dirs_target = True
 
         for path in paths:

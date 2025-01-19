@@ -371,6 +371,7 @@ class Target:
                 depval = t.name
             elif t.boundname:
                 if not self.is_dirs_target and state.is_dir(t.boundname):
+                    res.add("dirs")
                     continue
 
                 depval = t.boundname
