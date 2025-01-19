@@ -210,3 +210,5 @@ def ninja_build(state: State, output):
                 implicit=res_deps,
                 order_only=order_only,
             )
+
+    writer.default("all")
