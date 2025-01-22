@@ -13,3 +13,5 @@ MakeLocate two.c : sub1 ;
 MakeLocate three.c : sub2 ;
 MkDir sub1 ;
 MkDir sub2 ;
+
+Depends all : two.c three.c ;

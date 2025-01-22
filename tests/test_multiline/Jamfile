@@ -17,3 +17,5 @@ actions quietly SedShell
 }
 
 SedShell out.txt : in.txt ;
+
+Depends all : out.txt ;
