@@ -200,29 +200,31 @@ def ninja_build(state: State, output):
 
     for step in state.build_steps:
         all_deps = set()
-        outputs = set()
+        outputs = []
         targets, upd_action = step
 
         for target in targets:
-            if target.boundname:
-                outputs.add(target.boundname)
+            if not target.boundname:
+                continue
 
+            outputs.append(target.boundname)
+
+        outputs_set = set(outputs)
         for target in targets:
-            deps = target.get_dependency_list(state, outputs=outputs)
+            deps = target.get_dependency_list(state, outputs=outputs_set)
             all_deps.update(deps)
 
         if outputs:
-            inputs = set(
-                [
-                    escape_path(source.boundname or source.name)
-                    for source in upd_action.sources
-                ]
-            )
+            inputs = [
+                escape_path(source.boundname or source.name)
+                for source in upd_action.sources
+            ]
+            inputs_set = set(inputs)
             res_deps = set()
             order_only = set()
 
             for dep in all_deps:
-                if dep in inputs or dep in outputs:
+                if dep in inputs_set or dep in outputs_set:
                     continue
 
                 if dep in gen_headers:
