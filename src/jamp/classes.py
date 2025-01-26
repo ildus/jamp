@@ -610,6 +610,7 @@ class UpdatingAction:
 
     def prepare_lines(self, state, comment_sym="#"):
         from jamp.expand import var_string
+
         lines = self.action.commands
 
         for line in lines.split("\n"):

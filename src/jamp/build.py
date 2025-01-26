@@ -112,12 +112,39 @@ def ninja_build(state: State, output):
     target: Target = None
 
     counter = 0
+    commands_cache = {}
+
     for step in state.build_steps:
         upd_action = step[1]
         upd_action.name = f"{upd_action.action.name}{counter}".replace("+", "_")
         counter += 1
 
         full_cmd = upd_action.get_command(state)
+
+        # an optimization for simple rules with one command
+        # group similar rules to one
+        if upd_action.is_alone():
+            found = False
+            key = upd_action.action.name
+
+            if key in commands_cache:
+                saved = commands_cache[key]
+
+                for name, cached_cmd in saved:
+                    if full_cmd == cached_cmd:
+                        # no need to create a new rule, we have similar
+                        upd_action.name = name
+                        found = True
+                        break
+
+                if found:
+                    continue
+
+            else:
+                saved = commands_cache.setdefault(key, [])
+
+            saved.append((upd_action.name, full_cmd))
+
         if check_vms():
             fn = f"{upd_action.name}.com"
 
