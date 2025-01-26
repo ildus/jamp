@@ -554,6 +554,7 @@ class UpdatingAction:
     def __init__(self, action: Actions, sources: list, params: list):
         self.action = action
         self.sources = sources
+        self.base = None
         self.next: List[UpdatingAction] = []
         self.params = params
         self.targets = []
@@ -565,6 +566,7 @@ class UpdatingAction:
 
     def link(self, upd_action):
         self.next.append(upd_action)
+        upd_action.base = self
 
     def bound_params(self):
         res = []
@@ -603,8 +605,12 @@ class UpdatingAction:
 
                     target.vars[var] = modified
 
-    def prepare_lines(self, state, lines, comment_sym="#"):
+    def is_alone(self):
+        return not (bool(self.next) or bool(self.base))
+
+    def prepare_lines(self, state, comment_sym="#"):
         from jamp.expand import var_string
+        lines = self.action.commands
 
         for line in lines.split("\n"):
             line = line.strip()
@@ -618,7 +624,12 @@ class UpdatingAction:
             if check_vms():
                 self.modify_vms_paths(state)
 
-            line = var_string(line, self.bound_params(), state.vars)
+            line = var_string(
+                line,
+                self.bound_params(),
+                state.vars,
+                alone=self.is_alone(),
+            )
             line = line.replace("$", "$$")
             line = line.replace("<NINJA_SIGIL>", "$")
             state.vars.current_target = old_target
@@ -628,12 +639,12 @@ class UpdatingAction:
 
             yield line
 
-    def prepare_action(self, state: State, action: Actions):
+    def prepare_action(self, state: State):
         quotes = []
         concat = ""
 
         start_new_command = False
-        for line in self.prepare_lines(state, action.commands):
+        for line in self.prepare_lines(state):
             if start_new_command:
                 concat += " ; $\n "
 
@@ -672,13 +683,13 @@ class UpdatingAction:
 
         return concat
 
-    def prepare_windows_action(self, state: State, action: Actions):
+    def prepare_windows_action(self, state: State):
         """not tested"""
         quotes = []
         concat = ""
 
         add_newline = False
-        for line in self.prepare_lines(state, action.commands, comment_sym="REM"):
+        for line in self.prepare_lines(state, comment_sym="REM"):
             # watch for open quotes
             if add_newline:
                 concat += " $\n$^"
@@ -704,12 +715,12 @@ class UpdatingAction:
 
         return concat
 
-    def prepare_vms_action(self, state: State, action: Actions):
+    def prepare_vms_action(self, state: State):
         quotes = []
         concat = "$$ "
 
         add_newline = False
-        for line in self.prepare_lines(state, action.commands, comment_sym="!"):
+        for line in self.prepare_lines(state, comment_sym="!"):
             # watch for open quotes
             if add_newline:
                 concat += " $\n$^$$"
@@ -738,15 +749,15 @@ class UpdatingAction:
     def get_command(self, state: State, force_vms=False, force_windows=False):
         if not self.command:
             if force_vms or check_vms():
-                base_lines = self.prepare_vms_action(state, self.action)
+                base_lines = self.prepare_vms_action(state)
             elif force_windows or check_windows():
-                base_lines = self.prepare_windows_action(state, self.action)
+                base_lines = self.prepare_windows_action(state)
             else:
-                base_lines = self.prepare_action(state, self.action)
+                base_lines = self.prepare_action(state)
 
             if self.next:
-                for action in self.next:
-                    lines = action.get_command(state)
+                for next_upd_action in self.next:
+                    lines = next_upd_action.get_command(state)
                     if check_vms():
                         base_lines += "$\n$^" + lines
                     elif check_windows():
