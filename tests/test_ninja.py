@@ -101,6 +101,7 @@ def test_math_example():
         assert not os.path.exists("app")
         assert not os.path.exists("libprint.a")
 
+
 def test_circular_inc():
     d = "tests/test_circular_inc"
     with rel(d):
