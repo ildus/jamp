@@ -1,0 +1,5 @@
+Main app : main.c ;
+
+# force headers search in these headers
+HDRRULE on main.h third.h second.h = HdrRule ;
+HDRSCAN on main.h third.h second.h = $(HDRPATTERN) ;

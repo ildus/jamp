@@ -91,6 +91,9 @@ def main_cli():
 
     executors.bind_targets(state, search_headers=args.search_type)
 
+    all_target = Target.bind(state, "all")
+    all_target.search_for_cycles(verbose=args.verbose)
+
     print(f"...found {len(state.targets)} target(s)...")
     if args.verbose:
         print("...writing build.ninja...")

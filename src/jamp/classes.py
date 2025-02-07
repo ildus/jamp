@@ -345,6 +345,9 @@ class Target:
         # Found headers
         self.headers = None
 
+        # Circular search
+        self.circular_visited = False
+
     def collection_name(self):
         t = self.name
 
@@ -542,6 +545,37 @@ class Target:
                 continue
 
             self.includes.add(target)
+
+    def search_for_cycles(self, verbose=False, graph=None):
+        try:
+            import networkx
+        except ImportError:
+            print("!!! install `networkx` package to fix circular dependency errors")
+            return
+
+        if self.circular_visited:
+            return
+
+        self.circular_visited = True
+
+        top = False
+        if graph is None:
+            top = True
+            graph = networkx.DiGraph()
+
+        for inc in self.includes:
+            graph.add_edge(self, inc)
+            inc.search_for_cycles(graph=graph)
+
+        for dep in self.depends:
+            dep.search_for_cycles(graph=graph)
+
+        if top:
+            for cycle in networkx.simple_cycles(graph):
+                if verbose:
+                    print(f"removed circular dependency: {cycle[0]} from {cycle[-1]}")
+
+                cycle[-1].includes.remove(cycle[0])
 
     def __hash__(self):
         return hash(self.name)

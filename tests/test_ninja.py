@@ -100,3 +100,13 @@ def test_math_example():
         sp.run(["ninja", "-t", "clean"])
         assert not os.path.exists("app")
         assert not os.path.exists("libprint.a")
+
+def test_circular_inc():
+    d = "tests/test_circular_inc"
+    with rel(d):
+        main_cli()
+        sp.run(["ninja", "-t", "clean"])
+        sp.check_output("ninja")
+        assert os.path.exists("app")
+        sp.run(["ninja", "-t", "clean"])
+        assert not os.path.exists("app")
