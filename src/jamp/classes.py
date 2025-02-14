@@ -575,7 +575,10 @@ class Target:
                 if verbose:
                     print(f"removed circular dependency: {cycle[0]} from {cycle[-1]}")
 
-                cycle[-1].includes.remove(cycle[0])
+                try:
+                    cycle[-1].includes.remove(cycle[0])
+                except KeyError:
+                    pass
 
     def __hash__(self):
         return hash(self.name)
