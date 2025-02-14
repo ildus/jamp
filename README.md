@@ -38,7 +38,7 @@ Quick start
 Install:
 
     # install jamp
-    pip3 install github.com/ildus/jamp
+    pip3 install git+https://github.com/ildus/jamp
 
     # install ninja using your package manager
     dnf install ninja
