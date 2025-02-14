@@ -23,3 +23,11 @@ build-backend = "hatchling.build"
 
 [project.scripts]
 jamp = "jamp:main_cli"
+
+[project.optional-dependencies]
+graph = [
+  'networkx >= 3',
+]
+tests = [
+  'pytest >= 8.3.3',
+]
