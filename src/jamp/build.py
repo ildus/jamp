@@ -3,6 +3,8 @@ import os
 import sys
 import subprocess as sp
 
+from collections import OrderedDict
+
 from jamp import executors
 from jamp.classes import State, Target
 from jamp.paths import check_vms, escape_path
@@ -202,45 +204,46 @@ def ninja_build(state: State, output):
     )
 
     for step in state.build_steps:
-        all_deps = set()
-        outputs = []
+        outputs = OrderedDict()
         targets, upd_action = step
 
         for target in targets:
             if not target.boundname:
                 continue
 
-            outputs.append(target.boundname)
+            outputs[target.boundname] = None
 
-        outputs_set = set(outputs)
+        if len(outputs) == 0:
+            continue
+
+        all_deps = set()
+
         for target in targets:
-            deps = target.get_dependency_list(state, outputs=outputs_set)
+            deps = target.get_dependency_list(state, outputs=outputs)
             all_deps.update(deps)
 
-        if outputs:
-            inputs = [
-                escape_path(source.boundname or source.name)
-                for source in upd_action.sources
-            ]
-            inputs_set = set(inputs)
-            res_deps = set()
-            order_only = set()
+        inputs = OrderedDict()
+        for source in upd_action.sources:
+            inputs[escape_path(source.boundname or source.name)] = None
 
-            for dep in all_deps:
-                if dep in inputs_set or dep in outputs_set:
-                    continue
+        res_deps = set()
+        order_only = set()
 
-                if dep in gen_headers:
-                    order_only.add(dep)
-                else:
-                    res_deps.add(dep)
+        for dep in all_deps:
+            if dep in inputs or dep in outputs:
+                continue
 
-            writer.build(
-                (escape_path(i) for i in outputs),
-                upd_action.name,
-                inputs,
-                implicit=res_deps,
-                order_only=order_only,
-            )
+            if dep in gen_headers:
+                order_only.add(dep)
+            else:
+                res_deps.add(dep)
+
+        writer.build(
+            (escape_path(i) for i in outputs.keys()),
+            upd_action.name,
+            inputs.keys(),
+            implicit=res_deps,
+            order_only=order_only,
+        )
 
     writer.default("all")

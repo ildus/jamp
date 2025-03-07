@@ -71,7 +71,7 @@ def bind_targets(state: State, search_headers="base"):
         if pattern:
             db = scan_grep_output(state, pattern[0])
 
-    if search_headers:
+    if search_headers != 'none':
         for target in tuple(state.targets.values()):
             # tuple is because targets dict will change while searching
             if target.boundname:

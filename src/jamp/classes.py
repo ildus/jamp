@@ -509,10 +509,10 @@ class Target:
                 path.root = locate_dir
                 res_path = path.build(binding=True)
 
-                if os.path.exists(res_path):
-                    return res_path
-                elif res_path in state.target_locations:
+                if res_path in state.target_locations:
                     # this could be a generated file, and if it's in targets just return that path
+                    return res_path
+                elif os.path.exists(res_path):
                     return res_path
 
         # recreate
