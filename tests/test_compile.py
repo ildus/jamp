@@ -690,3 +690,35 @@ def test_on_return():
     run(state, state.parse_and_compile(rules))
     output = "ar ru some\nok\n"
     expect_output(output)
+
+
+def test_empty_1():
+    rules = """a = ;
+b = "" ;
+c = "" "" ;
+
+Echo $(a)1 ;
+Echo $(b)2 ;
+Echo $(c)3 ;
+    """
+    state = State()
+    run(state, state.parse_and_compile(rules))
+    output = "\n2\n3 3\n"
+    expect_output(output)
+
+
+def test_empty_1():
+    rules = """a = ;
+b = "" ;
+c = "" "" ;
+d = $(c) "" ;
+
+Echo $(a)1 ;
+Echo $(b)2 ;
+Echo $(c)3 ;
+Echo $(d)4 ;
+    """
+    state = State()
+    run(state, state.parse_and_compile(rules))
+    output = "\n2\n3 3\n4 4 4\n"
+    expect_output(output)

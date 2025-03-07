@@ -274,10 +274,7 @@ def iter_var(var, skip_empty=True):
             yield var
     elif isinstance(var, list):
         for item in var:
-            if skip_empty and not item:
-                pass
-            else:
-                yield item
+            yield item
     else:
         raise Exception(f"unexpected var for iteration: {var}")
 
