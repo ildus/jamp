@@ -268,10 +268,7 @@ def flatten(res: list):
 
 def iter_var(var, skip_empty=True):
     if isinstance(var, str):
-        if skip_empty and len(var) == 0:
-            pass
-        else:
-            yield var
+        yield var
     elif isinstance(var, list):
         for item in var:
             yield item
@@ -305,11 +302,7 @@ def expand(state: State, arg: Union[Arg, tuple, str], skip_empty=True):
     elif arg == "":
         return [""]
     elif isinstance(arg, str):
-        try:
-            res = var_expand(arg, state.params, state.vars)
-        except Exception as e:
-            print(f"could not expand '{arg}'")
-            raise e
+        res = var_expand(arg, state.params, state.vars)
     elif isinstance(arg, Exec):
         from jamp.executors import Result
 
