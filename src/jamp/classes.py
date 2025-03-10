@@ -1,5 +1,5 @@
 import os
-from typing import List, Union
+from typing import List, Union, Set
 from functools import cache
 
 from jamp.paths import Pathname, check_vms, check_windows
@@ -304,9 +304,9 @@ class Target:
         return UnderTarget(state, self)
 
     def __init__(self, name: str, notfile=False):
-        self.name = name
-        self.depends = set()
-        self.includes = set()
+        self.name: str = name
+        self.depends: Set[Target] = set()
+        self.includes: Set[Target] = set()
         self.boundname: Union[None, str] = None
         self.updating_actions: List[UpdatingAction] = []
         self.build_step: tuple = None
@@ -445,6 +445,12 @@ class Target:
             # do not go too deep in searching
             return
 
+        if self.is_output:
+            # do not scan output targets
+            # if file was already built, then we scan it, and remove that file
+            # ninja could fail
+            return
+
         if self.headers is not None:
             # do not search more than one time no each target
             return
@@ -460,15 +466,21 @@ class Target:
                 inc.find_headers(state, level=level + 1, db=db)
 
     def bind_location(self, state: State, strict=False):
+        """Returns a target if was found the a same location"""
+
         if not self.boundname:
             self.boundname = self.search(state, strict=strict)
 
-            if self.is_output and self.is_header:
-                gen_headers = state.targets["_gen_headers"]
-                gen_headers.depends.add(self)
-
         if self.boundname:
+            if self.boundname in state.target_locations:
+                return state.target_locations[self.boundname]
+
             state.target_locations[self.boundname] = self
+
+        if self.is_output and self.is_header:
+            gen_headers = state.targets.get("_gen_headers")
+            if gen_headers:
+                gen_headers.depends.add(self)
 
     def search(self, state: State, strict=False):
         """

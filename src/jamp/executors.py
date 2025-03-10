@@ -365,7 +365,7 @@ def exec_rule_on_target(state: State, targets, name, args):
 
     res = []
     for target_name in expand(state, targets):
-        target = state.get_target(target_name)
+        target = Target.bind(state, target_name)
 
         rule_res = None
         with target.overlay(state):

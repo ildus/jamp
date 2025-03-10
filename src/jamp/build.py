@@ -5,7 +5,7 @@ import subprocess as sp
 
 from collections import OrderedDict
 
-from jamp import executors
+from jamp import executors, headers
 from jamp.classes import State, Target
 from jamp.paths import check_vms, escape_path
 
@@ -17,6 +17,9 @@ def parse_args():
     )
     parser.add_argument("-b", "--build", action="store_true", help="call ninja")
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
+    parser.add_argument(
+        "--no-headers-cache", action="store_true", help="do not cache found headers"
+    )
     parser.add_argument(
         "-s",
         "--search-type",
@@ -91,7 +94,13 @@ def main_cli():
     if args.verbose:
         print("...binding targets and searching headers...")
 
+    if not args.no_headers_cache:
+        headers.load_headers_cache()
+
     executors.bind_targets(state, search_headers=args.search_type)
+
+    if not args.no_headers_cache:
+        headers.save_headers_cache()
 
     all_target = Target.bind(state, "all")
     all_target.search_for_cycles(verbose=args.verbose)
