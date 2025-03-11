@@ -73,6 +73,9 @@ class Builtins:
             p.grist = ""
 
             dry = p.build()
+            if dry == "." or dry == "..":
+                continue
+
             target = Target.bind(state, dry)
 
             if target.boundname is None:
