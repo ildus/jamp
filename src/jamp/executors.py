@@ -198,6 +198,7 @@ def exec_rule_action(state: State, rule: Rule, action_name: str, params: list):
             bindvars.add(arg.value)
 
     generated = False
+    restat = False
     prev_upd_action = None
     build_targets = []
     linking_targets = []
@@ -205,6 +206,9 @@ def exec_rule_action(state: State, rule: Rule, action_name: str, params: list):
         target = Target.bind(state, target_name)
         if target.generated:
             generated = True
+
+        if target.restat:
+            restat = True
 
         if target.build_step is not None:
             # there is a build step for this target, this target goes there
@@ -234,6 +238,7 @@ def exec_rule_action(state: State, rule: Rule, action_name: str, params: list):
         upd_action.targets = build_targets
         upd_action.generator = generated
         upd_action.bindvars = bindvars
+        upd_action.restat = restat
 
         step = (build_targets, upd_action)
         for target in build_targets:

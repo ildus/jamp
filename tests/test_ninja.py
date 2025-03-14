@@ -20,7 +20,8 @@ def test_simple():
         main_cli()
         sp.run(["ninja", "-t", "clean"])
         output = sp.check_output("ninja")
-        assert b"cp test.h test.c" in output
+        print(output)
+        assert b"Two test.c" in output
         assert os.path.exists("test.c")
         output = sp.check_output("ninja")
         assert b"ninja: no work to do." in output

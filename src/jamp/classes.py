@@ -79,6 +79,18 @@ class State:
 
         return False
 
+    def create_build_step_for_target(self, target, action_name, generator=False):
+        action = self.actions[action_name]
+        upd_action = UpdatingAction(action, [], [])
+        upd_action.targets = [target]
+        upd_action.generator = generator
+
+        step = ([target], upd_action)
+        self.build_steps.append(step)
+        target.build_step = step
+
+        return upd_action
+
 
 class Vars:
     delete_vars = ["LS_COLORS", "GITHUB_TOKEN"]
@@ -331,6 +343,9 @@ class Target:
         # Force generator option to ninja
         self.generated = False
 
+        # Force restat option to ninja
+        self.restat = False
+
         # collection is optimization, if this target is include and it depends on other
         # files just create a phony target with this target and all others
         self.collection = None
@@ -383,7 +398,7 @@ class Target:
                     depval = t.name
             elif t.boundname:
                 if not self.is_dirs_target and state.is_dir(t.boundname):
-                    res.add("dirs")
+                    res.add("_dirs_")
                     continue
 
                 depval = t.boundname

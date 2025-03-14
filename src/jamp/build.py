@@ -6,7 +6,7 @@ import subprocess as sp
 from collections import OrderedDict
 
 from jamp import executors, headers
-from jamp.classes import State, Target
+from jamp.classes import State, Target, UpdatingAction
 from jamp.paths import check_vms, escape_path
 
 
@@ -139,7 +139,7 @@ def ninja_build(state: State, output):
     commands_cache = {}
 
     for step in state.build_steps:
-        upd_action = step[1]
+        upd_action: UpdatingAction = step[1]
         upd_action.name = f"{upd_action.action.name}{counter}".replace("+", "_")
         counter += 1
 
@@ -195,6 +195,7 @@ def ninja_build(state: State, output):
                 restat=upd_action.restat,
                 generator=upd_action.generator,
                 depfile=upd_action.depfile,
+                description=upd_action.description(),
             )
 
     phonies = {}

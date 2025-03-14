@@ -56,7 +56,6 @@ class Builtins:
 
     def mkdir(self, state: State, paths_arg: list):
         from jamp.paths import Pathname
-        from jamp.classes import UpdatingAction
 
         paths = expand(state, paths_arg)
 
@@ -86,14 +85,7 @@ class Builtins:
                 self.dir_counter += 1
 
                 # prepare build steps
-                action = state.actions["MkDir1"]
-                upd_action = UpdatingAction(action, [], [])
-                upd_action.targets = [target]
-                upd_action.generator = True
-
-                step = ([target], upd_action)
-                state.build_steps.append(step)
-                target.build_step = step
+                state.create_build_step_for_target(target, "MkDir1", generator=True)
 
     def pathexists(self, state, paths_arg):
         from jamp.executors import Result
@@ -193,6 +185,14 @@ class Builtins:
         for target_name in targets:
             target = Target.bind(state, target_name)
             target.generated = True
+
+    def restat(self, state: State, targets: list):
+        """Force targets use restat in their rules"""
+
+        targets = expand(state, targets)
+        for target_name in targets:
+            target = Target.bind(state, target_name)
+            target.restat = True
 
     def temporary(self, state: State, targets: list):
         targets = expand(state, targets)
