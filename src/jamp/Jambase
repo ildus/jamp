@@ -1084,6 +1084,8 @@ rule LibraryFromObjects
 #
 rule Archive
 {
+    local _t ;
+
     for _t in $(<)
     {
         local target_ar = [ on $(_t) return $(AR) ] ;

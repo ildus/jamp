@@ -19,6 +19,7 @@ class State:
         debug_include=False,
         debug_env=False,
         target=None,
+        unwrap_phony=None,
     ):
         self.headers_complained = False
         self.verbose = verbose
@@ -34,6 +35,7 @@ class State:
         self.debug_deps = debug_deps
         self.debug_include = debug_include
         self.limit_target = target
+        self.unwrap_phony = unwrap_phony
 
         # reverse location->target map
         self.target_locations = {}
@@ -68,11 +70,14 @@ class State:
         if check_vms() and n.endswith("]"):
             return True
 
+        t = self.targets.get(n)
+        if t and t.is_dir:
+            return True
+
         if os.path.isdir(n):
             return True
 
-        t = self.targets.get(n)
-        return t and t.is_dir
+        return False
 
 
 class Vars:
@@ -371,7 +376,11 @@ class Target:
         for t in self.depends:
             depval = None
             if t.notfile:
-                depval = t.name
+                if state.unwrap_phony and t.name in state.unwrap_phony:
+                    phony_deps = t.get_dependency_list(state)
+                    res |= phony_deps
+                else:
+                    depval = t.name
             elif t.boundname:
                 if not self.is_dirs_target and state.is_dir(t.boundname):
                     res.add("dirs")

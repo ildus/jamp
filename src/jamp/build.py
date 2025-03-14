@@ -39,6 +39,15 @@ def parse_args():
         "-t", "--target", default=None, help="limit target for debug info"
     )
     parser.add_argument(
+        "--unwrap-phony",
+        default=[],
+        help=(
+            "unwrap specified phony targets in deps (useful for debug, "
+            "to find exact triggering input)"
+        ),
+        nargs="+",
+    )
+    parser.add_argument(
         "-f", "--jamfile", default="Jamfile", help="--specify jam file name"
     )
     parser.add_argument(
@@ -63,6 +72,7 @@ def main_cli():
         debug_include="include" in args.debug,
         debug_env="env" in args.debug,
         target=args.target,
+        unwrap_phony=args.unwrap_phony,
     )
     jamfile = args.jamfile
 
