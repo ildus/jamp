@@ -10,6 +10,27 @@ PATH_VARS = set(
 )
 
 
+def is_subdir(path: str, potential_subdir: str):
+    # Normalize paths to handle different path structures
+    norm_path = os.path.normpath(path).replace(os.sep, "/")
+    norm_subdir = os.path.normpath(potential_subdir).replace(os.sep, "/")
+    return norm_subdir.startswith(norm_path)
+
+
+def remove_overlapping(dirs: List):
+    # Sort dirs by length in descending order
+    dirs_sorted = sorted(dirs, key=len, reverse=True)
+
+    result = []
+
+    for dry in dirs_sorted:
+        # Check if dir is not a subdirectory of any existing directory in result
+        if not any(is_subdir(d, dry) for d in result):
+            result.append(dry)
+
+    return result
+
+
 class State:
     def __init__(
         self,
@@ -65,31 +86,42 @@ class State:
     def get_target(self, name):
         return self.targets[name]
 
-    @cache
-    def is_dir(self, n):
-        if check_vms() and n.endswith("]"):
-            return True
-
-        t = self.targets.get(n)
-        if t and t.is_dir:
-            return True
-
-        if os.path.isdir(n):
-            return True
-
-        return False
-
-    def create_build_step_for_target(self, target, action_name, generator=False):
+    def add_action_for_target(
+        self, target, action_name, generator=False, sources=[], params=[]
+    ):
         action = self.actions[action_name]
-        upd_action = UpdatingAction(action, [], [])
+        upd_action = UpdatingAction(action, sources, params)
         upd_action.targets = [target]
         upd_action.generator = generator
 
-        step = ([target], upd_action)
-        self.build_steps.append(step)
-        target.build_step = step
+        if target.build_step is None:
+            step = ([target], upd_action)
+            self.build_steps.append(step)
+            target.build_step = step
+        else:
+            prev_upd_action = target.build_step[1]
+            prev_upd_action.link(upd_action)
 
         return upd_action
+
+    def finish_steps(self):
+        target = Target.bind(self, "dirs")
+
+        if target.collected_dirs:
+            dirs = remove_overlapping(target.collected_dirs)
+
+            for dry in dirs:
+                dir_target = Target.bind(self, dry)
+                dir_target.boundname = dry
+                dir_target.is_dir = True
+
+                self.add_action_for_target(
+                    dir_target,
+                    "MkDirWhenNotExists",
+                    generator=True,
+                    params=[dry, target.boundname],
+                )
+                target.depends.add(dir_target)
 
 
 class Vars:
@@ -320,6 +352,18 @@ class Target:
     def overlay(self, state: State):
         return UnderTarget(state, self)
 
+    def is_order_only(self):
+        return self.is_output and self.is_header
+
+    def check_if_dir(self):
+        if self.is_dir:
+            return True
+
+        if self.boundname and check_vms() and self.boundname.endswith("]"):
+            return True
+
+        return False
+
     def __init__(self, name: str, notfile=False):
         self.name: str = name
         self.depends: Set[Target] = set()
@@ -339,6 +383,9 @@ class Target:
 
         # True if this is the main 'dirs' target
         self.is_dirs_target = False
+
+        # for mkdir
+        self.collected_dirs = None
 
         # Force generator option to ninja
         self.generated = False
@@ -397,8 +444,8 @@ class Target:
                 else:
                     depval = t.name
             elif t.boundname:
-                if not self.is_dirs_target and state.is_dir(t.boundname):
-                    res.add("_dirs_")
+                if not self.is_dirs_target and t.check_if_dir():
+                    res.add("dirs")
                     continue
 
                 depval = t.boundname
@@ -501,7 +548,7 @@ class Target:
 
             state.target_locations[self.boundname] = self
 
-        if self.is_output and self.is_header:
+        if self.is_order_only():
             gen_headers = state.targets.get("_gen_headers")
             if gen_headers:
                 gen_headers.depends.add(self)
@@ -649,7 +696,7 @@ class UpdatingAction:
             res.append([])
 
         res.append([source.boundname for source in self.sources if source.boundname])
-        res += self.params[2:]
+        res += self.params
         return res
 
     def description(self):
@@ -657,8 +704,7 @@ class UpdatingAction:
         for n in self.next:
             names.add(n.action.name)
 
-        targets = " ".join((target.boundname for target in self.targets))
-        return " & ".join(names) + " " + targets
+        return " & ".join(names) + " $out"
 
     def modify_vms_paths(self, state):
         if not self.bindvars:

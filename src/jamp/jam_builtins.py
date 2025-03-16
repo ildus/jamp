@@ -75,17 +75,10 @@ class Builtins:
             if dry == "." or dry == "..":
                 continue
 
-            target = Target.bind(state, dry)
+            if dirs_target.collected_dirs is None:
+                dirs_target.collected_dirs = set()
 
-            if target.boundname is None:
-                target.is_dir = True
-                target.boundname = dry
-                dirs_target.depends.add(target)
-
-                self.dir_counter += 1
-
-                # prepare build steps
-                state.create_build_step_for_target(target, "MkDir1", generator=True)
+            dirs_target.collected_dirs.add(dry)
 
     def pathexists(self, state, paths_arg):
         from jamp.executors import Result

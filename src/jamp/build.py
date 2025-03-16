@@ -115,6 +115,8 @@ def main_cli():
     all_target = Target.bind(state, "all")
     all_target.search_for_cycles(verbose=args.verbose)
 
+    state.finish_steps()
+
     print(f"...found {len(state.targets)} target(s)...")
     if args.verbose:
         print("...writing build.ninja...")
@@ -202,7 +204,13 @@ def ninja_build(state: State, output):
     for target in state.targets.values():
         deps = (escape_path(i) for i in target.get_dependency_list(state))
         if target.notfile:
-            writer.build(target.name, "phony", implicit=deps)
+            kwargs = {}
+            if target.is_dirs_target:
+                kwargs["order_only"] = deps
+            else:
+                kwargs["implicit"] = deps
+
+            writer.build(target.name, "phony", **kwargs)
             phonies[target.name] = True
 
     for target in state.targets.values():

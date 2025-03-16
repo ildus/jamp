@@ -579,62 +579,6 @@ actions GenBuildConfig1
 
 GenBuildConfig build.ninja ;
 
-# Dir proxies
-# This is a hack for the ninja, when created dirs touched
-# and that could trigger rebuilding dependant objects.
-# So when object depends on some dir actually it will depend on _dirs_,
-# which points to a file. If a file already created it means dirs are already
-# created. The file will not be updated, when actual dirs change, and therefore
-# will not trigger rebuilding.
-# DIRS_MARKER contains the name of the file.
-
-rule CreateDirsMarker
-{
-    NotFile _dirs_ ;
-    Depends _dirs_ : $(<) ;
-    Depends $(<) : dirs ;
-    Restat $(<) ;
-
-    CreateDirsMarker1 $(<) ;
-}
-
-if $(UNIX)
-{
-    actions CreateDirsMarker1
-    {
-        [ -f $(<) ] || touch $(<)
-    }
-}
-else if $(NT)
-{
-    actions CreateDirsMarker1
-    {
-        if not exist $(<) type nul>$(<)
-    }
-}
-else if $(VMS)
-{
-    actions CreateDirsMarker1
-    {
-        file = F$SEARCH( $(<) )
-        IF file .EQS. ""
-            OPEN/READ/WRITE op_file $(<)
-            CLOSE op_file
-        ENDIF
-    }
-}
-
-if $(VMS)
-{
-    DIRS_MARKER = ninja_dirs.stamp ;
-}
-else
-{
-    DIRS_MARKER = .ninja_dirs.stamp ;
-}
-
-CreateDirsMarker $(DIRS_MARKER) ;
-
 # /As object : source ;
 #
 # Assemble the file _source_, called by the @Object rule.
@@ -2258,9 +2202,9 @@ actions Link bind NEEDLIBS
 }
 
 # builtin MkDir rule depends on this
-actions MkDir1
+actions MkDirWhenNotExists
 {
-    $(MKDIR) $(<)
+    $(MKDIR) $(3)
 }
 
 actions together Ranlib
