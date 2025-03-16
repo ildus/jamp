@@ -565,6 +565,9 @@ class Target:
         if self.notfile:
             return None
 
+        if not self.name:
+            return None
+
         path = Pathname()
         path.parse(self.name)
 
