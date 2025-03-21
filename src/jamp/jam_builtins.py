@@ -249,7 +249,14 @@ class Builtins:
         try:
             output = sp.check_output(cmd, shell=True)
         except sp.CalledProcessError:
-            print(f"warning: command returned non-zero status:\n{cmd}\n{output}")
+            if state.verbose:
+                print(f"warning: command returned non-zero status:\n{cmd}\n{output}")
+            elif not hasattr(self, "nonzero_complained"):
+                print(
+                    "warning: some of Command rules returned "
+                    "non-zero status (use --verbose for more info)"
+                )
+                self.nonzero_complained = True
 
         return Result([str(output).strip()])
 
