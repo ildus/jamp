@@ -17,6 +17,7 @@ def parse_args():
     )
     parser.add_argument("-b", "--build", action="store_true", help="call ninja")
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
+    parser.add_argument("--profile", action="store_true", help="profile the execution")
     parser.add_argument(
         "--no-headers-cache", action="store_true", help="do not cache found headers"
     )
@@ -57,13 +58,12 @@ def parse_args():
     return args
 
 
-def main_cli():
-    """Command line entrypoint"""
+def main_app(args):
+    """Main entrypoint"""
 
     curdir = os.path.abspath(os.getcwd())
     basedir = os.path.dirname(__file__)
     jambase = os.path.join(basedir, "Jambase")
-    args = parse_args()
 
     state = State(
         verbose=args.verbose,
@@ -275,3 +275,16 @@ def ninja_build(state: State, output):
         )
 
     writer.default("all")
+
+
+def main_cli():
+    """Command line entrypoint"""
+
+    args = parse_args()
+    if args.profile:
+        import cProfile
+
+        ctx = {"args": args, "main_app": main_app}
+        cProfile.runctx("main_app(args)", ctx, {})
+    else:
+        main_app(args)
