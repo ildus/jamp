@@ -135,7 +135,7 @@ class Vars:
         self.set_basic_vars()
 
         # setting current targets will force to using target variables
-        self.current_target = []
+        self.current_context = []
 
     def split_path(self, val):
         return val.split(os.path.pathsep)
@@ -247,17 +247,17 @@ class Vars:
             raise Exception(f"vars_get: expected str value for key name: got {name}")
 
         if on_target:
-            self.current_target.append(on_target)
+            self.current_context.append(on_target.vars)
 
         res = None
-        if self.current_target:
-            for t in reversed(self.current_target):
-                if name in t.vars:
-                    res = t.vars.get(name)
+        if self.current_context:
+            for ctx in reversed(self.current_context):
+                if name in ctx:
+                    res = ctx.get(name)
                     break
 
         if on_target:
-            self.current_target.pop()
+            self.current_context.pop()
 
         if res is None:
             if name in self.scope:
@@ -329,11 +329,11 @@ class UnderTarget:
         self.target = target
 
     def __enter__(self):
-        self.state.vars.current_target.append(self.target)
+        self.state.vars.current_context.append(self.target.vars)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.state.vars.current_target.pop()
+        self.state.vars.current_context.pop()
         return True
 
 
@@ -685,7 +685,10 @@ class UpdatingAction:
         self.restat = False
         self.generator = False
         self.depfile = None
+
+        # for actions .. bind
         self.bindvars = None
+        self.bindparams = None
 
     def link(self, upd_action):
         self.next.append(upd_action)
@@ -710,28 +713,35 @@ class UpdatingAction:
         return " & ".join(names) + " $out"
 
     def modify_vms_paths(self, state):
-        if not self.bindvars:
+        """If path doesn't have directory, make it current"""
+
+        if not self.bindparams:
             return
 
-        for target in self.targets:
-            for var in self.bindvars:
-                value = target.vars.get(var)
-                if value:
-                    modified = []
-                    for item in value:
-                        has_dir = ":" in item or "[" in item
-                        if has_dir:
-                            modified.append(item)
-                        else:
-                            modified.append("[]" + item)
+        for var, value in self.bindparams.items():
+            modified = []
+            for item in value:
+                has_dir = ":" in item or "[" in item
+                if has_dir:
+                    modified.append(item)
+                else:
+                    modified.append("[]" + item)
 
-                    target.vars[var] = modified
+            self.bindparams[var] = modified
 
     def is_alone(self):
         return not (bool(self.next) or bool(self.base))
 
     def prepare_lines(self, state, comment_sym="#"):
         from jamp.expand import var_string
+
+        saved_context = state.vars.current_context
+        state.vars.current_context = []
+        for t in self.targets:
+            state.vars.current_context.append(t.vars)
+
+        if self.bindparams:
+            state.vars.current_context.append(self.bindparams)
 
         lines = self.action.commands
 
@@ -742,11 +752,6 @@ class UpdatingAction:
             if line.startswith(comment_sym):
                 continue
 
-            old_target = state.vars.current_target
-            state.vars.current_target = self.targets
-            if check_vms():
-                self.modify_vms_paths(state)
-
             line = var_string(
                 line,
                 self.bound_params(),
@@ -755,12 +760,13 @@ class UpdatingAction:
             )
             line = line.replace("$", "$$")
             line = line.replace("<NINJA_SIGIL>", "$")
-            state.vars.current_target = old_target
 
             if not line:
                 continue
 
             yield line
+
+        state.vars.current_context = saved_context
 
     def prepare_action(self, state: State):
         quotes = []
@@ -869,7 +875,45 @@ class UpdatingAction:
 
         return concat
 
+    def process_bind_vars(self, state):
+        """Set actual boundnames for BIND params in actions"""
+
+        if self.bindparams:
+            return
+
+        if not self.bindvars:
+            return
+
+        bindparams = {}
+
+        for target in self.targets:
+            for var in self.bindvars:
+                bind_values = state.vars.get(var, on_target=target)
+                if not bind_values:
+                    continue
+
+                res = []
+                for val in bind_values:
+                    bindtarget = Target.bind(state, val)
+                    if bindtarget.boundname:
+                        bindtarget.bind_location(state)
+
+                    # if bind was successfull
+                    if bindtarget.boundname:
+                        res.append(bindtarget.boundname)
+
+                if res:
+                    bindparams[var] = res
+
+        if bindparams:
+            self.bindparams = bindparams
+
+            if check_vms():
+                self.modify_vms_paths(state)
+
     def get_command(self, state: State, force_vms=False, force_windows=False):
+        self.process_bind_vars(state)
+
         if not self.command:
             if force_vms or check_vms():
                 base_lines = self.prepare_vms_action(state)

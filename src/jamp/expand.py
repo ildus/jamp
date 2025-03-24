@@ -87,16 +87,16 @@ def var_expand(
         # Look for [x-y] subscripting
         # sub1 is x (0 default)
         # sub2 is length (-1 means forever)
-        bracket_idx = var.find(MAGIC_LEFT)
+        left_idx = var.find(MAGIC_LEFT)
         sub1 = 0
         sub2 = 0
 
         subscript = False
 
-        if bracket_idx > 0:
+        if left_idx > 0:
             subscript = True
-            second_idx = varname[bracket_idx + 1 :].find(MAGIC_RIGHT)
-            parts = varname[bracket_idx + 1 :][:second_idx].split("-")
+            right_idx = varname[left_idx + 1 :].find(MAGIC_RIGHT)
+            parts = varname[left_idx + 1 :][:right_idx].split("-")
             sub1 = int(parts[0]) - 1
             if len(parts) == 1:
                 sub2 = sub1 + 1
@@ -105,7 +105,7 @@ def var_expand(
             else:
                 sub2 = -1
 
-            varname = varname[0:bracket_idx]
+            varname = varname[0:left_idx]
 
         # Get variable value, specially handling $(<), $(>), $(n)
         value = None

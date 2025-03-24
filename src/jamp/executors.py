@@ -71,7 +71,7 @@ def bind_targets(state: State, search_headers="base"):
         if pattern:
             db = scan_grep_output(state, pattern[0])
 
-    if search_headers != 'none':
+    if search_headers != "none":
         for target in tuple(state.targets.values()):
             # tuple is because targets dict will change while searching
             if target.boundname:
@@ -191,7 +191,6 @@ def exec_rule_action(state: State, rule: Rule, action_name: str, params: list):
         source_t = Target.bind(state, source_name)
         sources.append(source_t)
 
-    bindtargets = set()
     bindvars = set()
     if action.bindlist and action.bindlist[1]:
         for arg in action.bindlist[1]:
@@ -218,13 +217,11 @@ def exec_rule_action(state: State, rule: Rule, action_name: str, params: list):
             build_targets.append(target)
 
         for var in bindvars:
-            val = state.vars.get(var, on_target=target)
-            if val:
-                bindtarget = Target.bind(state, val[0])
-                bindtarget.boundname = val[0]
-                bindtarget.add_depends(state, (target,))
-                bindtarget.varname = var
-                bindtargets.add(bindtarget)
+            bind_names = state.vars.get(var, on_target=target)
+            if bind_names:
+                for val in bind_names:
+                    # just in case create targets if ACTIONS BIND params are set
+                    Target.bind(state, val[0])
 
     if prev_upd_action:
         upd_action = UpdatingAction(action, sources, params)
@@ -246,20 +243,6 @@ def exec_rule_action(state: State, rule: Rule, action_name: str, params: list):
             target.is_output = True
 
         state.build_steps.append(step)
-
-    for bindtarget in bindtargets:
-        if bindtarget.build_step is None:
-            action = Actions(
-                f"{bindtarget.varname}",
-                commands=f"true # stub for {bindtarget.name}",
-            )
-            upd_action = UpdatingAction(action, [], [])
-            upd_action.targets = [bindtarget]
-            upd_action.restat = True
-
-            step = ([bindtarget], upd_action)
-            state.build_steps.append(step)
-            bindtarget.build_step = step
 
 
 def exec_one_rule(state: State, name: str, params: list):
