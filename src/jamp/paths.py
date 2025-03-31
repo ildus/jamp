@@ -155,12 +155,16 @@ class Pathname:
         if fn is None:
             fn = ""
 
-        if self.root and self.root != "." and not is_abs:
-            path = PurePath(self.root, self.directory, fn)
+        if self.root or self.directory or fn:
+            if self.root and self.root != "." and not is_abs:
+                path = PurePath(self.root, self.directory, fn)
+            else:
+                path = PurePath(self.directory, fn)
         else:
-            path = PurePath(self.directory, fn)
+            path = ""
 
-        return self.out_grist() + str(path) + self.out_member()
+        res_path = self.out_grist() + str(path) + self.out_member()
+        return res_path
 
     def keep_only_parent(self):
         if not self.is_vms or (self.is_vms and self.base):
