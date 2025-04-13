@@ -87,8 +87,10 @@ class State:
         return self.targets[name]
 
     def add_action_for_target(
-        self, target, action_name, generator=False, sources=[], params=[]
+        self, target, action_name, generator=False, sources=None, params=None
     ):
+        sources = sources or []
+        params = params or []
         action = self.actions[action_name]
         upd_action = UpdatingAction(action, sources, params)
         upd_action.targets = [target]
@@ -290,7 +292,7 @@ class Rule:
         self.commands = commands
 
     def execute(self, state: State):
-        from executors import run
+        from jamp.executors import run
 
         run(state, self.commands)
 

@@ -221,7 +221,8 @@ def exec_rule_action(state: State, rule: Rule, action_name: str, params: list):
             if bind_names:
                 for val in bind_names:
                     # just in case create targets if ACTIONS BIND params are set
-                    Target.bind(state, val[0])
+                    if val:
+                        Target.bind(state, val[0])
 
     if prev_upd_action:
         upd_action = UpdatingAction(action, sources, params)
@@ -460,6 +461,8 @@ def exec_while(state: State, cond, block):
         ret = exec_block(state, block)
         if ret == FLOW_BREAK:
             break
+        elif ret == FLOW_CONTINUE:
+            continue
 
 
 def exec_for(state: State, var, items, block):
@@ -476,6 +479,8 @@ def exec_for(state: State, var, items, block):
         ret = exec_block(state, block)
         if ret == FLOW_BREAK:
             break
+        elif ret == FLOW_CONTINUE:
+            continue
 
 
 def exec_switch(state: State, arg, cases):
@@ -487,10 +492,6 @@ def exec_switch(state: State, arg, cases):
                     return exec_block(state, block[0])
                 else:
                     return run(state, block)
-
-
-def exec_actions(state, name, flags, args):
-    bindl, scripts = args
 
 
 def exec_block(state, cmds):
