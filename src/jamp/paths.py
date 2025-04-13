@@ -32,6 +32,14 @@ def escape_path(s):
     return s
 
 
+def add_paths(s, deps):
+    if check_vms():
+        for dep in deps:
+            s.add(dep.lower())
+    else:
+        s.update(deps)
+
+
 class Dir(Enum):
     EMPTY = 0  # empty string */
     DEV = 1  # dev: */

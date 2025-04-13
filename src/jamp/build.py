@@ -7,7 +7,7 @@ from collections import OrderedDict
 
 from jamp import executors, headers
 from jamp.classes import State, Target, UpdatingAction
-from jamp.paths import check_vms, escape_path
+from jamp.paths import check_vms, escape_path, add_paths
 
 
 def parse_args():
@@ -248,7 +248,7 @@ def ninja_build(state: State, output):
 
         for target in targets:
             deps = target.get_dependency_list(state, outputs=outputs)
-            all_deps.update(deps)
+            add_paths(all_deps, deps)
 
         inputs = OrderedDict()
         for source in upd_action.sources:
