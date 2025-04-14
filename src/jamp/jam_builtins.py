@@ -248,6 +248,7 @@ class Builtins:
         output = ""
         try:
             output = sp.check_output(cmd, shell=True)
+            output = output.decode("utf8").strip()
         except sp.CalledProcessError:
             if state.verbose:
                 print(f"warning: command returned non-zero status:\n{cmd}\n{output}")
@@ -258,7 +259,7 @@ class Builtins:
                 )
                 self.nonzero_complained = True
 
-        return Result([str(output).strip()])
+        return Result([output])
 
 
 def flatten(res: list):
