@@ -172,7 +172,8 @@ def ninja_build(state: State, output):
             saved.append((upd_action.name, full_cmd))
 
         if check_vms():
-            fn = f"{upd_action.name}.com"
+            # rule can be reused from saved, keep the counter for unique resp file name
+            fn = f"{upd_action.name}{counter}.com"
 
             writer.rule(
                 upd_action.name,
