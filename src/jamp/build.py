@@ -172,14 +172,14 @@ def ninja_build(state: State, output):
             saved.append((upd_action.name, full_cmd))
 
         if check_vms():
-            # rule can be reused from saved, keep the counter for unique resp file name
-            fn = f"{upd_action.name}{counter}.com"
+            # rule can be reused from saved, need the unique number for the resp file name
+            resp_fn = f"{upd_action.name}$step.com"
 
             writer.rule(
                 upd_action.name,
-                command=f"@{fn}",
+                command=f"@{resp_fn}",
                 description=upd_action.description(),
-                rspfile=fn,
+                rspfile=resp_fn,
                 rspfile_content=full_cmd,
                 restat=upd_action.restat,
                 generator=upd_action.generator,
@@ -232,7 +232,7 @@ def ninja_build(state: State, output):
         0,
     )
 
-    for step in state.build_steps:
+    for stepnum, step in enumerate(state.build_steps):
         outputs = OrderedDict()
         targets, upd_action = step
 
@@ -267,12 +267,18 @@ def ninja_build(state: State, output):
             else:
                 res_deps.add(dep)
 
+        variables = None
+
+        if check_vms():
+            variables = {"step": stepnum}
+
         writer.build(
             (escape_path(i) for i in outputs.keys()),
             upd_action.name,
             inputs.keys(),
             implicit=res_deps,
             order_only=order_only,
+            variables=variables,
         )
 
     writer.default("all")
