@@ -657,7 +657,7 @@ rule Cc
     CCHDRS on $(<) = [ on $(<) FIncludes $(HDRS) ] ;
     CCDEFS on $(<) = [ on $(<) FDefines $(DEFINES) ] ;
 
-    if $(UNIX)
+    if $(UNIX) && $(ENABLE_DEPFILES)
     {
         switch $(<:S)
         {
@@ -693,7 +693,7 @@ rule C++
     CCHDRS on $(<) = [ on $(<) FIncludes $(HDRS) ] ;
     CCDEFS on $(<) = [ on $(<) FDefines $(DEFINES) ] ;
 
-    if $(UNIX)
+    if $(UNIX) && $(ENABLE_DEPFILES)
     {
         DEPFILE on $(<) = "$out.d" ;
         OPTIM on $(<) += -MD -MF <NINJA_SIGIL>out.d ;

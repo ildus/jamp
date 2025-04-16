@@ -19,6 +19,11 @@ def parse_args():
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
     parser.add_argument("--profile", action="store_true", help="profile the execution")
     parser.add_argument(
+        "--depfiles",
+        action="store_true",
+        help="use depfile feature of ninja (only Unix)",
+    )
+    parser.add_argument(
         "--no-headers-cache", action="store_true", help="do not cache found headers"
     )
     parser.add_argument(
@@ -80,6 +85,9 @@ def main_app(args):
     state.vars.set("JAMP_PYTHON", [sys.executable])
     state.vars.set("JAMP_OPTIONS", sys.argv[1:])
     state.vars.set("NINJA_ROOTDIR", [curdir])
+
+    if args.depfiles:
+        state.vars.set("ENABLE_DEPFILES", ["1"])
 
     for var in args.env or ():
         parts = var.split("=")
