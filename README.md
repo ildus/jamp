@@ -1,52 +1,53 @@
 Jam build system on Python
 --------------------------
 
-This is reimplementation of Jam build system
-([link](https://swarm.workshop.perforce.com/projects/perforce_software-jam))
-on Python.
+This is a Python reimplementation of the Jam build system
+([link](https://swarm.workshop.perforce.com/projects/perforce_software-jam)).
 
 Supported platforms: Linux (Unix), OpenVMS, Windows (WIP)
 
 What is Jam
 ------------
 
-Jam is a build system (like meson, cmake etc). The difference is that its core is
-basically only an interpreter for its internal language and all the building part
-written on this language.
+Jam is a build system (similar to meson, cmake, etc.). The key difference is that its core is
+essentially an interpreter for its internal language, with all building functionality
+written in this language.
 
-The raw Jam language doesn't know how to build anything, but it allows to define rules
-and dependencies which will allow construct the actual command sequence to build
-something with a help of the dependency tree.
+The raw Jam language doesn't know how to build anything by itself, but it allows you to define rules
+and dependencies which construct the actual command sequence to build
+projects using a dependency tree.
 
-Jam includes `Jambase` which is a collection of generic rules to build C, C++ and
-Fortran projects. But it can be easily extended (or modified)
-to building other types of projects.
+Jam includes `Jambase`, which is a collection of generic rules to build C, C++ and
+Fortran projects. It can be easily extended (or modified)
+to support other types of projects.
 
-Differences from original Jam
+Differences from the original Jam
 -----------------------------
 
-* Uses `ninja`, `samurai` or other `ninja` compatible builder for
-    the actual executables building.
-* `mkdir` is a builtin command, collects all created dirs to `dirs` target.
-* Builtin rules are case-insensitive (Echo and ECHO are same).
-* Regular expressions are Python based.
-* `Clean` actions are ignored in favour of `ninja -t clean`.
+* Uses `ninja`, `samurai` or other `ninja`-compatible builders for
+    the actual building of executables.
+* `mkdir` is a built-in command that collects all created directories to the `dirs` target.
+* Built-in rules are case-insensitive (`Echo` and `ECHO` are the same).
+* Regular expressions are Python-based.
+* `Clean` actions are ignored in favor of `ninja -t clean`.
 
-Quick start
+Quick Start
 -----------
 
 Install:
 
-    # install jamp
+    # Install jamp with the system pip
     pip3 install git+https://github.com/ildus/jamp
 
-    # install ninja using your package manager
+    # Using pypy3 provides approximately twice the performance
+    # pypy3 -m pip install git+https://github.com/ildus/jamp
+
+    # Install ninja using your package manager
     dnf install ninja
     # or pacman -Syu ninja
-    # etc
+    # etc.
 
-For example we have this directory structure with a library and a main executable, and the
-main executable uses math functions:
+Example project structure with a library and a main executable that uses math functions:
 
     src
         main.c
@@ -59,28 +60,30 @@ main executable uses math functions:
 
 Corresponding Jamfile:
 
-    HDRS = include ;
-    Library libprint : lib/print.c ;
-    Main app : src/main.c ;
-    LinkLibraries app : libprint ;
-    LINKLIBS on app = -lm ;
+    HDRS = include ;                    # common includes, affects all sources
+    Library libprint : lib/print.c ;    # on Unix this will create libprint.a
+    Main app : src/main.c ;             # executable
+    LinkLibraries app : libprint ;      # linking the executable with our library
+    LINKLIBS on app = -lm ;             # system libraries
 
-So to get the executable we only need to run this commands:
+To build the executable, simply run:
 
     jamp && ninja
 
-Look at the tests dir to see more complex usage examples.
+For more complex examples, look at the `tests` directory. When dealing with subdirectories,
+it's recommended to use the `SubDir` rule. Note that this example should work on Windows
+and Linux (because of explicit paths), but will not work on VMS.
 
-Contribution
+Contributing
 -----------
 
     git clone git@github.com:ildus/jamp.git
 
-    # to run it without installing
+    # To run without installing
     export PYTHONPATH=$PYTHONPATH:<current_dir>/jamp/src
     python3 -m jamp
 
-    # testing the changes
+    # Testing changes
     pip install pytest
     cd <jamp root folder>
     pytest
@@ -90,8 +93,8 @@ Documentation
 
 See the `docs` directory.
 
-OpenVMS notes
+OpenVMS Notes
 ---------------
 
-Use my `github.com/ildus/samurai` fork for compilation. It supports additional '$^' escape
-sequence for newlines to allow adding full scripts to `build.ninja`.
+Use my `github.com/ildus/samurai` fork for compilation. It supports the additional '$^' escape
+sequence for newlines, allowing you to add full scripts to `build.ninja`.
