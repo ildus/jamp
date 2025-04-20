@@ -25,6 +25,10 @@ def check_vms():
 def check_windows():
     return platform.system() == "Windows"
 
+@cache
+def check_linux():
+    return platform.system() == "Linux"
+
 
 def escape_path(s):
     if check_vms():

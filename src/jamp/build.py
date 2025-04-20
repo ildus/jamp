@@ -7,7 +7,7 @@ from collections import OrderedDict
 
 from jamp import executors, headers
 from jamp.classes import State, Target, UpdatingAction
-from jamp.paths import check_vms, escape_path, add_paths
+from jamp.paths import check_vms, escape_path, add_paths, check_windows, check_linux
 
 
 def parse_args():
@@ -153,7 +153,7 @@ def ninja_build(state: State, output):
         upd_action.name = f"{upd_action.action.name}{counter}".replace("+", "_")
         counter += 1
 
-        full_cmd = upd_action.get_command(state)
+        full_cmd, oneliner = upd_action.get_command(state)
 
         # an optimization for simple rules with one command
         # group similar rules to one
@@ -179,7 +179,19 @@ def ninja_build(state: State, output):
 
             saved.append((upd_action.name, full_cmd))
 
-        if check_vms():
+        if not oneliner and check_windows():
+            resp_fn = f"{upd_action.name}$step.bat"
+
+            writer.rule(
+                upd_action.name,
+                command=f"cmd /C {resp_fn}",
+                description=upd_action.description(),
+                rspfile=resp_fn,
+                rspfile_content=full_cmd,
+                restat=upd_action.restat,
+                generator=upd_action.generator,
+            )
+        elif not oneliner and check_vms():
             # rule can be reused from saved, need the unique number for the resp file name
             resp_fn = f"{upd_action.name}$step.com"
 

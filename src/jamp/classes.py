@@ -676,6 +676,8 @@ class Target:
 
 
 class UpdatingAction:
+    windows_cmd_join = " & $\n"
+
     def __init__(self, action: Actions, sources: list, params: list):
         self.action = action
         self.sources = sources
@@ -812,22 +814,24 @@ class UpdatingAction:
                 concat += line
                 start_new_command = True
 
-        return concat
+        return concat, True
 
     def prepare_windows_action(self, state: State):
         """not tested"""
         quotes = []
         concat = ""
 
-        add_newline = False
-        for line in self.prepare_lines(state, comment_sym="REM"):
-            # watch for open quotes
-            if add_newline:
-                concat += " $\n$^"
+        start_new_command = False
 
-            add_newline = False
+        for line in self.prepare_lines(state, comment_sym="REM"):
+            if start_new_command:
+                concat += self.windows_cmd_join
+
+            start_new_command = False
+
+            # watch for open quotes
             for c in line:
-                if c in ["'", '"', "`"]:
+                if c in ["'", '"']:
                     if quotes and quotes[-1] == c:
                         quotes.pop()
                     else:
@@ -837,23 +841,23 @@ class UpdatingAction:
             if line.endswith("^"):
                 concat += line[:-1]
             elif len(quotes):
-                concat += line + " "
-            else:
-                # $^ is a hack to samurai (github.com/ildus/samurai)
-                # which adds a proper newline in a script
                 concat += line
-                add_newline = True
+            else:
+                concat += line
+                start_new_command = True
 
-        return concat
+        return concat, True
 
     def prepare_vms_action(self, state: State):
         quotes = []
         concat = "$$ "
 
+        oneliner = True
         add_newline = False
         for line in self.prepare_lines(state, comment_sym="!"):
             # watch for open quotes
             if add_newline:
+                oneliner = False
                 concat += " $\n$^$$"
 
             add_newline = False
@@ -875,7 +879,7 @@ class UpdatingAction:
                 concat += line
                 add_newline = True
 
-        return concat
+        return concat, oneliner
 
     def process_bind_vars(self, state):
         """Set actual boundnames for BIND params in actions"""
@@ -916,13 +920,18 @@ class UpdatingAction:
     def get_command(self, state: State, force_vms=False, force_windows=False):
         self.process_bind_vars(state)
 
+        still_oneliner = True
+
         if not self.command:
             if force_vms or check_vms():
-                base_lines = self.prepare_vms_action(state)
+                base_lines, oneliner = self.prepare_vms_action(state)
             elif force_windows or check_windows():
-                base_lines = self.prepare_windows_action(state)
+                base_lines, oneliner = self.prepare_windows_action(state)
             else:
-                base_lines = self.prepare_action(state)
+                base_lines, oneliner = self.prepare_action(state)
+
+            if not oneliner:
+                still_oneliner = False
 
             if self.next:
                 for next_upd_action in self.next:
@@ -930,7 +939,7 @@ class UpdatingAction:
                     if check_vms():
                         base_lines += "$\n$^" + lines
                     elif check_windows():
-                        base_lines += "$\n$^" + lines
+                        base_lines += self.windows_cmd_join + lines
                     else:
                         base_lines += " ; $\n" + lines
 
@@ -940,4 +949,4 @@ class UpdatingAction:
 
             self.command = base_lines
 
-        return self.command
+        return self.command, still_oneliner
