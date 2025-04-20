@@ -707,7 +707,7 @@ Echo $(c)3 ;
     expect_output(output)
 
 
-def test_empty_1():
+def test_empty_2():
     rules = """a = ;
 b = "" ;
 c = "" "" ;

@@ -10,7 +10,7 @@ from jamp.jam_builtins import (
     lol_get,
 )
 from jamp.jam_syntax import Arg, Node
-from jamp.classes import Rule, State, Exec, Target, UpdatingAction, Actions
+from jamp.classes import Rule, State, Exec, Target, UpdatingAction
 from typing import Optional, Union
 from jamp.pattern import match
 

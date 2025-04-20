@@ -169,7 +169,7 @@ def var_expand(
 @dataclass
 class Edits:
     f: None | Pathname
-    parent: bool = False  #:P -- go to parent directory
+    parent: bool = False  # :P -- go to parent directory
     filemods: bool = False  # one of the above applied
     downshift: bool = False  # :L -- downshift result
     upshift: bool = False  # :U -- upshift result
