@@ -37,10 +37,13 @@ Quick Start
 Install:
 
     # Install jamp with the system pip
+    pip3 install jam-build
+
+    # Or from the latest main branch.
     pip3 install git+https://github.com/ildus/jamp
 
     # Using pypy3 provides approximately twice the performance
-    # pypy3 -m pip install git+https://github.com/ildus/jamp
+    # pypy3 -m pip install jam-build
 
     # Install ninja using your package manager
     dnf install ninja

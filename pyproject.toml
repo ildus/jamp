@@ -29,6 +29,7 @@ packages = ["src/jamp"]
 
 [project.scripts]
 jamp = "jamp:main_cli"
+jam-build = "jamp:main_cli"
 
 [project.optional-dependencies]
 tests = [
