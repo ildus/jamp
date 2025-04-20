@@ -36,8 +36,6 @@ def load_headers_cache():
 
 
 def save_headers_cache():
-    global headers_cache
-
     if headers_cache:
         try:
             with open(FN_CACHE, "wb") as f:
@@ -48,8 +46,6 @@ def save_headers_cache():
 
 
 def get_cached_headers(state, fn: str, timestamp: float):
-    global headers_cache
-
     if headers_cache:
         data = headers_cache.get(fn)
         if data:
