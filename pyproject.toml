@@ -1,6 +1,6 @@
 [project]
 name = "jam-build"
-version = "0.6"
+version = "0.6.0"
 authors = [
   { name="Ildus Kurbangaliev", email="i.kurbangaliev@gmail.com" },
 ]
@@ -23,6 +23,9 @@ Issues = "https://github.com/ildus/jamp/issues"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/jamp"]
 
 [project.scripts]
 jamp = "jamp:main_cli"
