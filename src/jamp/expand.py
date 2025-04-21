@@ -345,7 +345,7 @@ def var_string(var: str, lol: list, state_vars: Union[Vars, dict], alone=False):
         elif alone and text == "$(<)":
             res += "<NINJA_SIGIL>out"
         elif alone and text == "$(>)":
-            res += "<NINJA_SIGIL>in"
+            res += "<NINJA_SIGIL>in <NINJA_SIGIL>n"
         else:
             res += " ".join(var_expand(text, lol, state_vars, keep_max=False))
 

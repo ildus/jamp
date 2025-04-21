@@ -48,6 +48,7 @@ class State:
         self.rules = {}
         self.actions = {}
         self.targets = {}
+        self.nocare = {}
         self.current_rule = None
         self.params = None
         self.always_build = set()
@@ -146,7 +147,12 @@ class Vars:
         import os
         import platform
 
-        self.scope.update(os.environ.copy())
+        if check_windows():
+            import nt
+            self.scope.update(nt.environ.copy())
+        else:
+            self.scope.update(os.environ.copy())
+
         for v in self.delete_vars:
             if v in self.scope:
                 del self.scope[v]
@@ -162,7 +168,7 @@ class Vars:
         self.scope["OSPLAT"] = platform.machine()
         self.scope["OS"] = platform.system().upper()
         self.scope["JAMUNAME"] = platform.uname()
-        self.scope["JAMVERSION"] = "2.5.5"
+        self.scope["JAMVERSION"] = "2.6.1"
 
         for k, v in self.scope.items():
             if k in PATH_VARS:
@@ -420,8 +426,9 @@ class Target:
     def collection_name(self):
         t = self.name
 
-        if check_vms():
+        if check_vms() or check_windows():
             # : is a special escape for VMS paths
+            # for Windows - disk drives (C:)
             t = self.name.replace(":", "_").lower()
 
         return f"_{t}_"
@@ -439,6 +446,9 @@ class Target:
 
         for t in self.depends:
             depval = None
+            if t.name in state.nocare:
+                continue
+
             if t.notfile:
                 if state.unwrap_phony and t.name in state.unwrap_phony:
                     phony_deps = t.get_dependency_list(state)
@@ -459,6 +469,9 @@ class Target:
 
         if not self.notfile:
             for t in self.includes:
+                if t.name in state.nocare:
+                    continue
+
                 if use_cached and t.collection is not None:
                     res.add(t.collection_name())
                     continue
@@ -676,7 +689,9 @@ class Target:
 
 
 class UpdatingAction:
-    windows_cmd_join = " & $\n"
+    # using undocumented ^T as a delimiter, it worked in Windows 2022
+    # if stops working need to use something like " ( cmd ) & ( second cmd) "
+    windows_cmd_join = " ^T $\n"
 
     def __init__(self, action: Actions, sources: list, params: list):
         self.action = action
@@ -846,7 +861,7 @@ class UpdatingAction:
                 concat += line
                 start_new_command = True
 
-        return concat, True
+        return concat, False
 
     def prepare_vms_action(self, state: State):
         quotes = []
@@ -934,8 +949,10 @@ class UpdatingAction:
                 still_oneliner = False
 
             if self.next:
+                still_oneliner = False
+
                 for next_upd_action in self.next:
-                    lines = next_upd_action.get_command(state)
+                    lines, _ = next_upd_action.get_command(state)
                     if check_vms():
                         base_lines += "$\n$^" + lines
                     elif check_windows():

@@ -418,7 +418,7 @@ def test_include():
 
     state = State()
     run(state, state.parse_and_compile(rules))
-    output = "warning: unknown rule Test1\n1\n2\n"
+    output = "jamp: unknown rule Test1\n1\n2\n"
     expect_output(output)
 
 

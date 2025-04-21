@@ -272,14 +272,19 @@ def ninja_build(state: State, output):
             add_paths(all_deps, deps)
 
         inputs = OrderedDict()
+        nocare = OrderedDict()
+
         for source in upd_action.sources:
-            inputs[escape_path(source.boundname or source.name)] = None
+            if source.name in state.nocare:
+                nocare[escape_path(source.boundname or source.name)] = None
+            else:
+                inputs[escape_path(source.boundname or source.name)] = None
 
         res_deps = set()
         order_only = set()
 
         for dep in all_deps:
-            if dep in inputs or dep in outputs:
+            if dep in inputs or dep in outputs or dep in nocare:
                 continue
 
             if dep in gen_headers:
@@ -287,10 +292,10 @@ def ninja_build(state: State, output):
             else:
                 res_deps.add(dep)
 
-        variables = None
+        variables = {"n": " ".join(nocare.keys())} if len(nocare) else {}
 
-        if check_vms():
-            variables = {"step": stepnum}
+        if check_vms() or check_windows():
+            variables["step"] = stepnum
 
         writer.build(
             (escape_path(i) for i in outputs.keys()),
@@ -314,4 +319,7 @@ def main_cli():
         ctx = {"args": args, "main_app": main_app}
         cProfile.runctx("main_app(args)", ctx, {})
     else:
-        main_app(args)
+        try:
+            main_app(args)
+        except KeyboardInterrupt:
+            print("jamp: interrupted")

@@ -105,7 +105,7 @@ class Builtins:
             return []
 
         if not hasattr(self, "match_complained"):
-            print("warning: Match rule works by Python regular expression rules")
+            print("jamp: Match rule works by Python regular expression rules")
             self.match_complained = True
 
         res = []
@@ -197,21 +197,19 @@ class Builtins:
         if hasattr(self, "leaves_complained"):
             return
 
-        print("warning: leaves is ignored")
+        print('jamp: "leaves" rule is ignored')
         self.leaves_complained = True
 
     def nocare(self, state: State, targets: list):
-        if hasattr(self, "nocare_complained"):
-            return
-
-        print("warning: nocare is ignored")
-        self.nocare_complained = True
+        targets = expand(state, targets)
+        for target_name in targets:
+            state.nocare[target_name] = None
 
     def noupdate(self, state: State, targets: list):
         if hasattr(self, "noupdate_complained"):
             return
 
-        print("warning: noupdate is ignored")
+        print('jamp: "noupdate" rule is ignored')
         self.noupdate_complained = True
 
     def _print(self, val: Union[str, list], first: bool = True):
@@ -251,10 +249,10 @@ class Builtins:
             output = output.decode("utf8").strip()
         except sp.CalledProcessError:
             if state.verbose:
-                print(f"warning: command returned non-zero status:\n{cmd}\n{output}")
+                print(f"jamp: command returned non-zero status:\n{cmd}\n{output}")
             elif not hasattr(self, "nonzero_complained"):
                 print(
-                    "warning: some of Command rules returned "
+                    "jamp: some of Command rules returned "
                     "non-zero status (use --verbose for more info)"
                 )
                 self.nonzero_complained = True

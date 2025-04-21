@@ -263,7 +263,7 @@ def exec_one_rule(state: State, name: str, params: list):
         if name != "Clean":
             # we just ignore clean rules, ninja will do cleaning part
             if name not in complained_rules:
-                output(f"warning: unknown rule {name}")
+                output(f"jamp: unknown rule {name}")
                 complained_rules.add(name)
 
         return

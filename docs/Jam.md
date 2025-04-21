@@ -422,50 +422,6 @@ case $1 in
 esac
 ```
 
-## DIAGNOSTICS
-
-In addition to generic error messages, `Jam` may emit one of the following:
-
-`warning: unknown rule X`
-
-A rule was invoked that has not been defined with an "actions" or "rule" statement.
-
-`using N temp target(s)`
-
-Targets marked as being temporary (but nonetheless present) have been found.
-
-`updating N target(s)`
-
-Targets are out-of-date and will be updated.
-
-`can't find N target(s)`
-
-Source files can't be found and there are no actions to create them.
-
-`can't make N target(s)`
-
-Due to sources not being found, other targets cannot be made.
-
-`warning: X depends on itself`
-
-A target depends on itself either directly or through its sources.
-
-`don't know how to make X`
-
-A target is not present and no actions have been defined to create it.
-
-`X skipped for lack of Y`
-
-A source failed to build, and thus a target cannot be built.
-
-`warning: using independent target X`
-
-A target that is not a dependency of any other target is being referenced with $(<) or $(>).
-
-`X removed`
-
-`Jam` removed a partially built target after being interrupted.
-
 ## SEE ALSO
 
 - [Jambase Reference](Jambase.md)

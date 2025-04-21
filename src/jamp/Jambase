@@ -237,6 +237,7 @@ if $(NT)
     MV      ?= move /y ;
     CP      ?= copy ;
     RM      ?= del /f/q ;
+    MKDIR   ?= mkdir ;
     RMDIR       ?= rmdir /s/q ;
     SLASH   ?= \\ ;
     SUFLIB  ?= .lib ;
@@ -263,10 +264,7 @@ if $(NT)
         C++FLAGS    ?= $(CCFLAGS) ;
         LINK        ?= link /nologo ;
         LINKFLAGS   ?= "" ;
-        LINKLIBS    ?=
-                $(MSVCNT)\\lib\\$(I)libc.lib
-                $(MSVCNT)\\lib\\$(I)oldnames.lib
-                $(MSVCNT)\\lib\\$(I)kernel32.lib ;
+        LINKLIBS    ?= ;
         OPTIM       ?= "" ;
         STDHDRS     ?= $(VISUALC)\\include ;
         UNDEFFLAG   ?= "/u _" ;
@@ -1156,7 +1154,7 @@ rule SharedLibraryFromObjects
         local  _implib = $(4) ;
         local  _def    = $(3) ;
 
-        _implib ?= $(_l:S=$(SUFLIBSHR)$(SUFLIB)) ;
+        _implib ?= $(_l:S=$(SUFLIBSHR)) ;
         _def    ?= $(_l:S=.def) ;
 
         Clean    clean : $(_implib) ;

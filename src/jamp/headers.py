@@ -27,7 +27,7 @@ def load_headers_cache():
                 headers_cache = {}
                 headers_cache["jamp_version"] = HEADERS_CACHE_VERSION
                 print(
-                    f"Headers cache was invalidated, new version is {HEADERS_CACHE_VERSION}"
+                    f"jamp: headers cache was invalidated, new version is {HEADERS_CACHE_VERSION}"
                 )
     else:
         headers_cache = {}
@@ -41,7 +41,7 @@ def save_headers_cache():
             with open(FN_CACHE, "wb") as f:
                 pickle.dump(headers_cache, f)
         except Exception as e:
-            print(f"error: could not save to headers cache to {FN_CACHE}: {e}")
+            print(f"jamp: could not save to headers cache to {FN_CACHE}: {e}")
             os.unlink(FN_CACHE)
 
 
@@ -163,13 +163,13 @@ def scan_headers(state, fn: str, hdrscan: tuple):
     if not os.path.exists(fn):
         if not state.verbose and not state.headers_complained:
             print(
-                "warning: errors while headers searching, "
+                "jamp: errors while headers searching, "
                 "use verbose option to turn on all messages"
             )
             state.headers_complained = True
 
         if state.verbose:
-            print(f"warning: {fn} not found while searching headers, skipped")
+            print(f"jamp: {fn} not found while searching headers, skipped")
 
         return
 
