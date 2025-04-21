@@ -201,6 +201,8 @@ class Builtins:
         self.leaves_complained = True
 
     def nocare(self, state: State, targets: list):
+        """not used yet"""
+
         targets = expand(state, targets)
         for target_name in targets:
             state.nocare[target_name] = None

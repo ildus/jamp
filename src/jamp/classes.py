@@ -446,8 +446,6 @@ class Target:
 
         for t in self.depends:
             depval = None
-            if t.name in state.nocare:
-                continue
 
             if t.notfile:
                 if state.unwrap_phony and t.name in state.unwrap_phony:
@@ -469,9 +467,6 @@ class Target:
 
         if not self.notfile:
             for t in self.includes:
-                if t.name in state.nocare:
-                    continue
-
                 if use_cached and t.collection is not None:
                     res.add(t.collection_name())
                     continue

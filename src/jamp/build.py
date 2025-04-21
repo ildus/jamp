@@ -222,6 +222,12 @@ def ninja_build(state: State, output):
             )
 
     phonies = {}
+    gen_headers = {}
+
+    for dep in state.targets["_gen_headers"].depends:
+        if dep.boundname:
+            gen_headers[dep.boundname] = None
+
     for target in state.targets.values():
         deps = (escape_path(i) for i in target.get_dependency_list(state))
         if target.notfile:
@@ -243,15 +249,6 @@ def ninja_build(state: State, output):
             writer.build(target.collection_name(), "phony", implicit=deps)
             phonies[target.collection_name()] = True
 
-    gen_headers = dict.fromkeys(
-        (
-            dep.boundname
-            for dep in state.targets["_gen_headers"].depends
-            if dep.boundname
-        ),
-        0,
-    )
-
     for stepnum, step in enumerate(state.build_steps):
         outputs = OrderedDict()
         targets, upd_action = step
@@ -272,30 +269,23 @@ def ninja_build(state: State, output):
             add_paths(all_deps, deps)
 
         inputs = OrderedDict()
-        nocare = OrderedDict()
 
         for source in upd_action.sources:
-            if source.name in state.nocare:
-                nocare[escape_path(source.boundname or source.name)] = None
-            else:
-                inputs[escape_path(source.boundname or source.name)] = None
+            inputs[escape_path(source.boundname or source.name)] = None
 
         res_deps = set()
         order_only = set()
 
         for dep in all_deps:
-            if dep in inputs or dep in outputs or dep in nocare:
-                continue
-
             if dep in gen_headers:
                 order_only.add(dep)
             else:
                 res_deps.add(dep)
 
-        variables = {"n": " ".join(nocare.keys())} if len(nocare) else {}
+        variables = None
 
         if check_vms() or check_windows():
-            variables["step"] = stepnum
+            variables = {"step": stepnum}
 
         writer.build(
             (escape_path(i) for i in outputs.keys()),
