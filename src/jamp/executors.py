@@ -411,6 +411,16 @@ def evaluate_expr(state: State, args: tuple):
                 return set(left).issubset(right)
 
             left = evaluate_expr(state, left)
+
+            # quick path for AND and OR
+            match op:
+                case "&&":
+                    if not var_bool(left):
+                        return False
+                case "||":
+                    if var_bool(left):
+                        return True
+
             right = evaluate_expr(state, right)
             match op:
                 case "=":
@@ -429,8 +439,6 @@ def evaluate_expr(state: State, args: tuple):
                     return var_bool(left) and var_bool(right)
                 case "||":
                     return var_bool(left) or var_bool(right)
-                case "in":
-                    return len(set(left).intersection(right)) > 0
                 case _:
                     raise ExecutionError(f"unexpected binary operation: {op}")
         case (Node.EXPR_UNARY, op, arg):
