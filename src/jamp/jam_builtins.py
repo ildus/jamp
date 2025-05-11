@@ -205,7 +205,8 @@ class Builtins:
 
         targets = expand(state, targets)
         for target_name in targets:
-            state.nocare[target_name] = None
+            target = Target.bind(state, target_name)
+            target.nocare = True
 
     def noupdate(self, state: State, targets: list):
         if hasattr(self, "noupdate_complained"):

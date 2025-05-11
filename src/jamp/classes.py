@@ -48,7 +48,6 @@ class State:
         self.rules = {}
         self.actions = {}
         self.targets = {}
-        self.nocare = {}
         self.current_rule = None
         self.params = None
         self.always_build = set()
@@ -422,6 +421,9 @@ class Target:
 
         # Circular search
         self.circular_visited = False
+
+        # NoCare rule
+        self.nocare = False
 
     def collection_name(self):
         t = self.name
