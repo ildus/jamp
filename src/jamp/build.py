@@ -229,13 +229,14 @@ def ninja_build(state: State, output):
             gen_headers[dep.boundname] = None
 
     for target in state.targets.values():
-        deps = (escape_path(i) for i in target.get_dependency_list(state))
+        implicit, order_only = (escape_path(i) for i in target.get_dependency_list(state))
         if target.notfile:
             kwargs = {}
             if target.is_dirs_target:
-                kwargs["order_only"] = deps
+                kwargs["order_only"] = (implicit | order_only)
             else:
-                kwargs["implicit"] = deps
+                kwargs["order_only"] = order_only
+                kwargs["implicit"] = implicit
 
             writer.build(target.name, "phony", **kwargs)
             phonies[target.name] = True
@@ -245,8 +246,10 @@ def ninja_build(state: State, output):
             if target.collection_name() in phonies:
                 continue
 
-            deps = (escape_path(i) for i in target.collection)
-            writer.build(target.collection_name(), "phony", implicit=deps)
+            implicit_deps = (escape_path(i) for i in target.collection[0])
+            order_only_deps = (escape_path(i) for i in target.collection[1])
+            writer.build(target.collection_name(), "phony", implicit=implicit_deps,
+                         order_only=order_only_deps)
             phonies[target.collection_name()] = True
 
     for stepnum, step in enumerate(state.build_steps):
@@ -262,28 +265,36 @@ def ninja_build(state: State, output):
         if len(outputs) == 0:
             continue
 
-        all_deps = set()
+        all_implicit = set()
+        all_order_only = set()
 
         for target in targets:
-            deps = target.get_dependency_list(state, outputs=outputs)
-            add_paths(all_deps, deps)
+            implicit, order_only = target.get_dependency_list(state, outputs=outputs)
+            add_paths(all_implicit, implicit)
+            add_paths(all_order_only, order_only)
 
         inputs = OrderedDict()
 
         for source in upd_action.sources:
             inputs[escape_path(source.boundname or source.name)] = None
 
-        res_deps = set()
-        order_only = set()
+        res_implicit = set()
+        res_order_only = set()
 
-        for dep in all_deps:
+        for dep in all_implicit:
             if dep in inputs:
                 continue
 
             if dep in gen_headers:
-                order_only.add(dep)
+                res_order_only.add(dep)
             else:
-                res_deps.add(dep)
+                res_implicit.add(dep)
+
+        for dep in all_order_only:
+            if dep in inputs:
+                continue
+
+            res_order_only.add(dep)
 
         variables = None
 
@@ -294,8 +305,8 @@ def ninja_build(state: State, output):
             (escape_path(i) for i in outputs.keys()),
             upd_action.name,
             inputs.keys(),
-            implicit=res_deps,
-            order_only=order_only,
+            implicit=res_implicit,
+            order_only=res_order_only,
             variables=variables,
         )
 

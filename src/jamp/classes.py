@@ -426,7 +426,7 @@ class Target:
         self.nocare = False
 
         # NoUpdate rule
-        self.nocare = False
+        self.noupdate = False
 
     def collection_name(self):
         t = self.name
@@ -439,12 +439,14 @@ class Target:
         return f"_{t}_"
 
     def get_dependency_list(self, state: State, level=0, outputs=None):
-        res = set()
+        ''' Ninja level dependency list '''
+
+        implicit, order_only = set(), set()
         use_cached = outputs is None or len(outputs) == 1
 
         if level == 10:
             # do not go too deep for includes
-            return res
+            return (implicit, order_only)
 
         if use_cached and self.deps:
             return self.deps
@@ -454,28 +456,32 @@ class Target:
 
             if t.notfile:
                 if state.unwrap_phony and t.name in state.unwrap_phony:
-                    phony_deps = t.get_dependency_list(state)
-                    res |= phony_deps
+                    phony_deps_impl, phony_deps_order = t.get_dependency_list(state)
+                    implicit |= phony_deps_impl
+                    order_only |= phony_deps_order
                 else:
                     depval = t.name
             elif t.boundname:
                 if not self.is_dirs_target and t.check_if_dir():
-                    res.add("dirs")
+                    implicit.add("dirs")
                     continue
 
                 depval = t.boundname
             elif t.nocare:
                 continue
 
-            if depval and outputs is not None and depval in outputs:
-                continue
-            elif depval:
-                res.add(depval)
+            if depval:
+                if outputs is not None and depval in outputs:
+                    continue
+                elif t.noupdate:
+                    order_only.add(depval)
+                else:
+                    implicit.add(depval)
 
         if not self.notfile:
             for t in self.includes:
                 if use_cached and t.collection is not None:
-                    res.add(t.collection_name())
+                    implicit.add(t.collection_name())
                     continue
 
                 depval = None
@@ -495,39 +501,42 @@ class Target:
                     continue
 
                 if len(t.depends) or len(t.includes):
-                    inner_deps = t.get_dependency_list(
+                    inner_deps_impl, inner_deps_order = t.get_dependency_list(
                         state, level=level + 1, outputs=outputs
                     )
 
                     if not use_cached:
-                        res |= inner_deps
-                    elif len(inner_deps):
-                        t.collection = set((depval,))
-                        t.collection |= t.get_dependency_list(
-                            state, level=level + 1, outputs=outputs
-                        )
+                        implicit |= inner_deps_impl
+                        order_only |= inner_deps_order
+                    elif len(inner_deps_impl) or len(inner_deps_order):
+                        t.collection = (set((depval,)) | inner_deps_impl, set(inner_deps_order))
                         depval = t.collection_name()
 
-                res.add(depval)
+                if t.noupdate:
+                    order_only.add(depval)
+                else:
+                    implicit.add(depval)
 
-            # collect dependencies from sources which not built
+            # collect dependencies from sources which are not built
             for dep in self.depends:
                 if dep.notfile:
                     continue
                 elif dep.build_step is None:
-                    res |= dep.get_dependency_list(state, outputs=outputs)
+                    built_deps_impl, built_deps_order = dep.get_dependency_list(state, outputs=outputs)
+                    implicit |= built_deps_impl
+                    order_only |= built_deps_order
 
         if state.debug_deps:
             if state.limit_target is not None:
                 if state.limit_target in self.name:
-                    print(self.name, res)
+                    print(self.name, implicit, order_only)
             else:
-                print(self.name, res)
+                print(self.name, implicit_order_only)
 
         if not use_cached:
-            return res
+            return (implicit, order_only)
 
-        self.deps = res
+        self.deps = (frozenset(implicit), frozenset(order_only))
         return self.deps
 
     def find_headers(self, state: State, level=0, db=None):

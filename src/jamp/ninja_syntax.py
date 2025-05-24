@@ -121,8 +121,9 @@ class Writer(object):
             all_inputs.extend(implicit)
         if order_only:
             order_only = [escape_path(x) for x in as_list(order_only)]
-            all_inputs.append("||")
-            all_inputs.extend(order_only)
+            if len(order_only):
+                all_inputs.append("||")
+                all_inputs.extend(order_only)
         if implicit_outputs:
             implicit_outputs = [escape_path(x) for x in as_list(implicit_outputs)]
             out_outputs.append("|")
