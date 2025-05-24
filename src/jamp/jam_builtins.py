@@ -201,19 +201,16 @@ class Builtins:
         self.leaves_complained = True
 
     def nocare(self, state: State, targets: list):
-        """not used yet"""
-
         targets = expand(state, targets)
         for target_name in targets:
             target = Target.bind(state, target_name)
             target.nocare = True
 
     def noupdate(self, state: State, targets: list):
-        if hasattr(self, "noupdate_complained"):
-            return
-
-        print('jamp: "noupdate" rule is ignored')
-        self.noupdate_complained = True
+        targets = expand(state, targets)
+        for target_name in targets:
+            target = Target.bind(state, target_name)
+            target.noupdate = True
 
     def _print(self, val: Union[str, list], first: bool = True):
         """unflatten before printing"""

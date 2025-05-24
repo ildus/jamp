@@ -425,6 +425,9 @@ class Target:
         # NoCare rule
         self.nocare = False
 
+        # NoUpdate rule
+        self.nocare = False
+
     def collection_name(self):
         t = self.name
 
@@ -461,6 +464,8 @@ class Target:
                     continue
 
                 depval = t.boundname
+            elif t.nocare:
+                continue
 
             if depval and outputs is not None and depval in outputs:
                 continue
@@ -478,8 +483,10 @@ class Target:
                     depval = t.name
                 elif t.boundname and t.boundname in state.target_locations:
                     depval = t.boundname
-                elif t.boundname and os.path.isfile(t.boundname):
-                    depval = t.boundname
+                #elif t.boundname and os.path.isfile(t.boundname):
+                #    depval = t.boundname
+                elif t.notcare:
+                    continue
 
                 if depval is None:
                     continue
