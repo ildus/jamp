@@ -485,7 +485,7 @@ class Target:
                     depval = t.boundname
                 #elif t.boundname and os.path.isfile(t.boundname):
                 #    depval = t.boundname
-                elif t.notcare:
+                elif t.nocare:
                     continue
 
                 if depval is None:

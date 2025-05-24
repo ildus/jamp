@@ -277,6 +277,9 @@ def ninja_build(state: State, output):
         order_only = set()
 
         for dep in all_deps:
+            if dep in inputs:
+                continue
+
             if dep in gen_headers:
                 order_only.add(dep)
             else:
