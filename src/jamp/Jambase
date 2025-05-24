@@ -362,10 +362,6 @@ else if $(UNIX)
     case AIX :
         LINKLIBS    ?= -lbsd ;
 
-    case AMIGA :
-        CC      ?= gcc ;
-        YACC        ?= bison -y ;
-
     case CYGWIN :
         CC      ?= gcc ;
         CCFLAGS     += -D__cygwin__ ;
@@ -375,49 +371,14 @@ else if $(UNIX)
         SUFEXE      ?= .exe ;
         YACC        ?= bison -y ;
 
-    case DGUX :
-        RANLIB      ?= "" ;
-        RELOCATE    ?= true ;
-
     case HPUX :
         RANLIB      ?= "" ;
 
-    case INTERIX :
-        CC      ?= gcc ;
-        JAMSHELL    ?= sh -c ;
-        RANLIB      ?= "" ;
-
-    case IRIX :
-        RANLIB      ?= "" ;
-
-    case Darwin :
-        PICFLAGS ?= -fPIC ;
-
-    case MPEIX :
-        CC      ?= gcc ;
-        C++     ?= gcc ;
-        CCFLAGS     += -D_POSIX_SOURCE ;
-        HDRS        += /usr/include ;
-        RANLIB      ?= "" ;
-        NOARSCAN    ?= true ;
-        NOARUPDATE  ?= true ;
-
-    case MVS :
-        RANLIB      ?= "" ;
-
-    case NEXT :
-        AR      ?= libtool -o ;
-        RANLIB      ?= "" ;
-
-    case Darwin :
+    case DARWIN :
         C++     ?= c++ ;
         MANDIR      ?= /usr/local/share/man ;
-
-    case NCR :
-        RANLIB      ?= "" ;
-
-    case PTX :
-        RANLIB      ?= "" ;
+        DEFAULT_ARFLAGS     ?= csr ;
+        PICFLAGS ?= -fPIC ;
 
     case QNX :
         AR      ?= wlib ;
@@ -430,13 +391,6 @@ else if $(UNIX)
         NOARSCAN    ?= true ;
         RANLIB      ?= "" ;
 
-    case SCO :
-        RANLIB      ?= "" ;
-        RELOCATE    ?= true ;
-
-    case SINIX :
-        RANLIB      ?= "" ;
-
     case SOLARIS :
         RANLIB      ?= "" ;
         AR      ?= "/usr/ccs/bin/ar ru" ;
@@ -444,10 +398,6 @@ else if $(UNIX)
         case UNICOS :
         NOARSCAN    ?= true ;
         OPTIM       ?= -O0 ;
-
-    case UNIXWARE :
-        RANLIB      ?= "" ;
-        RELOCATE    ?= true ;
     }
 
     # UNIX defaults

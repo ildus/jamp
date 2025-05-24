@@ -7,10 +7,10 @@ from collections import OrderedDict
 
 from jamp import executors, headers
 from jamp.classes import State, Target, UpdatingAction
-from jamp.paths import check_vms, escape_path, add_paths, check_windows, check_linux
+from jamp.paths import check_vms, escape_path, add_paths, check_windows
 
 
-def parse_args():
+def parse_args(skip_args=False):
     parser = argparse.ArgumentParser(
         prog="jamp",
         description="Jam Build System (Python version)",
@@ -59,7 +59,7 @@ def parse_args():
     parser.add_argument(
         "-e", "--env", action="append", help="--specify extra env variables"
     )
-    args = parser.parse_args()
+    args = parser.parse_args(args=[] if skip_args else None)
     return args
 
 
@@ -299,10 +299,10 @@ def ninja_build(state: State, output):
     writer.default("all")
 
 
-def main_cli():
+def main_cli(skip_args=False):
     """Command line entrypoint"""
 
-    args = parse_args()
+    args = parse_args(skip_args=skip_args)
     if args.profile:
         import cProfile
 

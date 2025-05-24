@@ -17,7 +17,7 @@ def rel(path):
 def test_simple():
     d = "tests/test_simple"
     with rel(d):
-        main_cli()
+        main_cli(skip_args=True)
         sp.run(["ninja", "-t", "clean"])
         output = sp.check_output("ninja")
         print(output)
@@ -29,11 +29,11 @@ def test_simple():
         assert b"Cleaning... 1 files." in output
 
 
-def test_subdir():
+def test_subgen():
     d = "tests/test_subgen"
     with rel(d):
         os.environ["TOP"] = "."
-        main_cli()
+        main_cli(skip_args=True)
         sp.run(["ninja", "-t", "clean"])
         output = sp.check_output("ninja")
         assert os.path.exists("app")
@@ -44,7 +44,7 @@ def test_subdir():
 def test_dirs():
     d = "tests/test_dirs"
     with rel(d):
-        main_cli()
+        main_cli(skip_args=True)
         sp.run(["ninja", "-t", "clean"])
         sp.check_output("ninja")
         assert os.path.exists("sub1/two.c")
@@ -58,7 +58,7 @@ def test_dirs():
 def test_copy_files():
     d = "tests/test_copy_files"
     with rel(d):
-        main_cli()
+        main_cli(skip_args=True)
         sp.run(["ninja", "-t", "clean"])
         sp.check_output("ninja")
         assert os.path.exists("foo.so")
@@ -69,7 +69,7 @@ def test_copy_files():
 def test_multiline():
     d = "tests/test_multiline"
     with rel(d):
-        main_cli()
+        main_cli(skip_args=True)
         sp.run(["ninja", "-t", "clean"])
         sp.check_output("ninja")
         assert os.path.exists("out.txt")
@@ -80,7 +80,7 @@ def test_multiline():
 def test_simple_app():
     d = "tests/test_simple_app"
     with rel(d):
-        main_cli()
+        main_cli(skip_args=True)
         sp.run(["ninja", "-t", "clean"])
         sp.check_output("ninja")
         assert os.path.exists("app")
@@ -93,7 +93,7 @@ def test_simple_app():
 def test_math_example():
     d = "tests/test_math_example"
     with rel(d):
-        main_cli()
+        main_cli(skip_args=True)
         sp.run(["ninja", "-t", "clean"])
         sp.check_output("ninja")
         assert os.path.exists("app")
@@ -106,7 +106,7 @@ def test_math_example():
 def test_circular_inc():
     d = "tests/test_circular_inc"
     with rel(d):
-        main_cli()
+        main_cli(skip_args=True)
         sp.run(["ninja", "-t", "clean"])
         sp.check_output("ninja")
         assert os.path.exists("app")
