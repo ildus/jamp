@@ -4,7 +4,7 @@ Jam build system on Python
 This is a Python reimplementation of the Jam build system
 ([link](https://swarm.workshop.perforce.com/projects/perforce_software-jam)).
 
-Supported platforms: Linux (Unix), OpenVMS, Windows (WIP)
+Supported platforms: Linux (Unix), OpenVMS, Windows (WIP), MacOS (WIP)
 
 What is Jam
 ------------
