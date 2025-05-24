@@ -531,7 +531,7 @@ class Target:
                 if state.limit_target in self.name:
                     print(self.name, implicit, order_only)
             else:
-                print(self.name, implicit_order_only)
+                print(self.name, implicit, order_only)
 
         if not use_cached:
             return (implicit, order_only)
