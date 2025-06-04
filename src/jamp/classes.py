@@ -148,6 +148,7 @@ class Vars:
 
         if check_windows():
             import nt
+
             self.scope.update(nt.environ.copy())
         else:
             self.scope.update(os.environ.copy())
@@ -438,8 +439,11 @@ class Target:
 
         return f"_{t}_"
 
+    def not_searchable(self):
+        return "SEARCH" not in self.vars and "LOCATE" not in self.vars
+
     def get_dependency_list(self, state: State, level=0, outputs=None):
-        ''' Ninja level dependency list '''
+        """Ninja level dependency list"""
 
         implicit, order_only = set(), set()
         use_cached = outputs is None or len(outputs) == 1
@@ -461,6 +465,8 @@ class Target:
                     order_only |= phony_deps_order
                 else:
                     depval = t.name
+            elif t.nocare and t.not_searchable():
+                continue
             elif t.boundname:
                 if not self.is_dirs_target and t.check_if_dir():
                     implicit.add("dirs")
@@ -489,7 +495,7 @@ class Target:
                     depval = t.name
                 elif t.boundname and t.boundname in state.target_locations:
                     depval = t.boundname
-                #elif t.boundname and os.path.isfile(t.boundname):
+                # elif t.boundname and os.path.isfile(t.boundname):
                 #    depval = t.boundname
                 elif t.nocare:
                     continue
@@ -509,7 +515,10 @@ class Target:
                         implicit |= inner_deps_impl
                         order_only |= inner_deps_order
                     elif len(inner_deps_impl) or len(inner_deps_order):
-                        t.collection = (set((depval,)) | inner_deps_impl, set(inner_deps_order))
+                        t.collection = (
+                            set((depval,)) | inner_deps_impl,
+                            set(inner_deps_order),
+                        )
                         depval = t.collection_name()
 
                 if t.noupdate:
@@ -522,7 +531,9 @@ class Target:
                 if dep.notfile:
                     continue
                 elif dep.build_step is None:
-                    built_deps_impl, built_deps_order = dep.get_dependency_list(state, outputs=outputs)
+                    built_deps_impl, built_deps_order = dep.get_dependency_list(
+                        state, outputs=outputs
+                    )
                     implicit |= built_deps_impl
                     order_only |= built_deps_order
 
