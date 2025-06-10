@@ -120,7 +120,8 @@ def exec_assign(
             curval = state.vars.get(name)
             if curval:
                 state.vars.set(name, list(iter_var(curval)) + list(iter_var(value)))
-            else:
+            elif value:
+                # original jam skips setting var if value is empty
                 assign = True
 
         if assign:
@@ -148,7 +149,8 @@ def exec_assign_on_target(
                 elif assign_type == "?=":
                     if varname not in target_vars:
                         target_vars[varname] = value
-                elif assign_type == "+=":
+                elif assign_type == "+=" and value:
+                    # note: skip adding if the value is empty
                     if varname not in target_vars:
                         target_vars[varname] = value
                     else:
