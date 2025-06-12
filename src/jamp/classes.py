@@ -169,6 +169,7 @@ class Vars:
         self.scope["OS"] = platform.system().upper()
         self.scope["JAMUNAME"] = platform.uname()
         self.scope["JAMVERSION"] = "2.6.1"
+        self.scope["JAMCOUNTER"] = "<NINJA_SIGIL>step"
 
         for k, v in self.scope.items():
             if k in PATH_VARS:
@@ -714,8 +715,7 @@ class Target:
 
 class UpdatingAction:
     # using undocumented ^T as a delimiter, it worked in Windows 2022
-    # if stops working need to use something like " ( cmd ) & ( second cmd) "
-    windows_cmd_join = " ^T $\n"
+    windows_cmd_join = "$\n$^"
 
     def __init__(self, action: Actions, sources: list, params: list):
         self.action = action
@@ -862,15 +862,15 @@ class UpdatingAction:
         quotes = []
         concat = ""
 
-        start_new_command = False
+        new_cmd = None
 
         for line in self.prepare_lines(state, comment_sym="REM"):
-            if start_new_command:
-                concat += self.windows_cmd_join
+            if new_cmd is not None:
+                concat += new_cmd
 
-            start_new_command = False
+            new_cmd = None
 
-            # watch for open quotes
+            # watch for open quotes and redirections
             for c in line:
                 if c in ["'", '"']:
                     if quotes and quotes[-1] == c:
@@ -885,7 +885,7 @@ class UpdatingAction:
                 concat += line
             else:
                 concat += line
-                start_new_command = True
+                new_cmd = self.windows_cmd_join
 
         return concat, False
 
