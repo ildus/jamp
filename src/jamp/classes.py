@@ -84,7 +84,7 @@ class State:
         return cmds
 
     def get_target(self, name):
-        return self.targets[name]
+        return self.targets.get(name)
 
     def add_action_for_target(
         self, target, action_name, generator=False, sources=None, params=None
@@ -829,6 +829,8 @@ class UpdatingAction:
             elif line.endswith("("):
                 concat += line + " "
             elif line.endswith("|"):
+                concat += line + " "
+            elif line.endswith("{"):
                 concat += line + " "
             elif line == "then" or line.endswith(" then"):
                 concat += line + " "

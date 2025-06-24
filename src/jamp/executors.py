@@ -378,9 +378,9 @@ def exec_return_on_target(state: State, targets, val):
     res = []
     for target_name in expand(state, targets):
         target = state.get_target(target_name)
-
-        with target.overlay(state):
-            res += expand(state, val)
+        if target:
+            with target.overlay(state):
+                res += expand(state, val)
 
     return Result(res)
 
