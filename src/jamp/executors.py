@@ -30,11 +30,12 @@ class Result:
 def run(state: State, cmds: Union[list, Exec]) -> Optional[int]:
     """Starting point of tasks execution"""
 
+    res = None
     if cmds:
         if isinstance(cmds, Exec):
             return cmds.execute(state)
 
-        for ex in cmds:
+        for i, ex in enumerate(cmds):
             ret = ex.execute(state)
             if ret:
                 # probably we need to break the execution
@@ -45,8 +46,10 @@ def run(state: State, cmds: Union[list, Exec]) -> Optional[int]:
 
                     pdb.set_trace()
 
-                elif isinstance(ret, Result):
-                    return ret
+                if isinstance(ret, Result):
+                    res = ret
+
+    return res
 
 
 def bind_targets(state: State, search_headers="base"):

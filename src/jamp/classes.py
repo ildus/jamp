@@ -745,7 +745,6 @@ class UpdatingAction:
             res.append([])
 
         res.append([source.boundname for source in self.sources if source.boundname])
-        res += self.params
         return res
 
     def description(self):

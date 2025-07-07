@@ -1,0 +1,19 @@
+Command "rm -f b.txt" ;
+Command "touch b.txt" ;
+
+rule One
+{
+    One1 $(<) : $(>) : c ;
+    Depends all : $(<) ;
+}
+
+actions One1
+{
+    touch $(<)
+    echo $(<) $(>)
+    echo $(1) $(2)
+    echo $(1) $(2) $(3) $(4)
+    echo $(3) $(4) $(2) $(1)
+}
+
+One a.txt : b.txt ;
