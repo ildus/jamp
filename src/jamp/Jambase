@@ -2152,7 +2152,7 @@ actions Link bind NEEDLIBS
 # builtin MkDir rule depends on this
 actions MkDirWhenNotExists
 {
-    $(MKDIR) $(3)
+    $(MKDIR) $(<)
 }
 
 actions together Ranlib

@@ -229,14 +229,14 @@ def exec_rule_action(state: State, rule: Rule, action_name: str, params: list):
                         Target.bind(state, val[0])
 
     if prev_upd_action:
-        upd_action = UpdatingAction(action, sources, params)
+        upd_action = UpdatingAction(action, sources)
         upd_action.targets = linking_targets
         upd_action.bindvars = bindvars
         prev_upd_action.link(upd_action)
 
     if build_targets:
         # one build step, can output several targets
-        upd_action = UpdatingAction(action, sources, params)
+        upd_action = UpdatingAction(action, sources)
         upd_action.targets = build_targets
         upd_action.generator = generated
         upd_action.bindvars = bindvars

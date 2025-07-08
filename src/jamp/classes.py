@@ -87,12 +87,11 @@ class State:
         return self.targets.get(name)
 
     def add_action_for_target(
-        self, target, action_name, generator=False, sources=None, params=None
+        self, target, action_name, generator=False, sources=None
     ):
         sources = sources or []
-        params = params or []
         action = self.actions[action_name]
-        upd_action = UpdatingAction(action, sources, params)
+        upd_action = UpdatingAction(action, sources)
         upd_action.targets = [target]
         upd_action.generator = generator
 
@@ -117,12 +116,12 @@ class State:
                 dir_target.boundname = dry
                 dir_target.is_dir = True
 
-                self.add_action_for_target(
+                action = self.add_action_for_target(
                     dir_target,
                     "MkDirWhenNotExists",
                     generator=True,
-                    params=[dry, target.boundname],
                 )
+                action.targets = [target]
                 target.depends.add(dir_target)
 
 
@@ -714,15 +713,13 @@ class Target:
 
 
 class UpdatingAction:
-    # using undocumented ^T as a delimiter, it worked in Windows 2022
     windows_cmd_join = "$\n$^"
 
-    def __init__(self, action: Actions, sources: list, params: list):
+    def __init__(self, action: Actions, sources: list):
         self.action = action
         self.sources = sources
         self.base = None
         self.next: List[UpdatingAction] = []
-        self.params = params
         self.targets = []
         self.command = None
         self.restat = False
