@@ -38,7 +38,7 @@ def compile(state: State, node: tuple | list):
         case (Node.LOCAL, name, value):
             return Exec(executors.exec_local_assign, (name, compile(state, value)))
         case (Node.CALL, rule_name, lol):
-            return Exec(executors.exec_rule, (rule_name, compile(state, lol)))
+            return Exec(executors.exec_rule, (compile(state, rule_name), compile(state, lol)))
         case (Node.ACTIONS, *r):
             return Exec(compile_actions, r)
         case (Node.WHILE, cond, block):

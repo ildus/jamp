@@ -324,6 +324,7 @@ def expand(state: State, arg: Union[Arg, tuple, str], skip_empty=True):
             for v in iter_var(val, skip_empty=skip_empty):
                 res.append(v)
     else:
+        print(type(arg))
         raise Exception(f"could not expand arg: {arg}")
 
     validate(res)

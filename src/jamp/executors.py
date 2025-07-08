@@ -141,29 +141,28 @@ def exec_assign_on_target(
     for target_name in iter_var(targets_var):
         target = Target.bind(state, target_name)
 
-        with target.overlay(state):
-            # value should be expanded on target influence
-            value = expand(state, assign_list, skip_empty=False)
-            target_vars = target.vars
+        value = expand(state, assign_list, skip_empty=False)
+        names = expand(state, name_arg)
+        target_vars = target.vars
 
-            for varname in expand(state, name_arg):
-                if assign_type == "=":
+        for varname in names:
+            if assign_type == "=":
+                target_vars[varname] = value
+            elif assign_type == "?=":
+                if varname not in target_vars:
                     target_vars[varname] = value
-                elif assign_type == "?=":
-                    if varname not in target_vars:
-                        target_vars[varname] = value
-                elif assign_type == "+=" and value:
-                    # note: skip adding if the value is empty
-                    if varname not in target_vars:
-                        target_vars[varname] = value
+            elif assign_type == "+=" and value:
+                # note: skip adding if the value is empty
+                if varname not in target_vars:
+                    target_vars[varname] = value
+                else:
+                    curval = flatten(target_vars[varname])
+                    if curval:
+                        target_vars[varname] = list(iter_var(curval)) + list(
+                            iter_var(value)
+                        )
                     else:
-                        curval = flatten(target_vars[varname])
-                        if curval:
-                            target_vars[varname] = list(iter_var(curval)) + list(
-                                iter_var(value)
-                            )
-                        else:
-                            target_vars[varname] = value
+                        target_vars[varname] = value
 
 
 def exec_break(state: State, arg) -> int:
@@ -300,9 +299,7 @@ def exec_rule(state: State, name: Arg, args):
         if isinstance(rule_res, Result):
             res += rule_res.val
         elif rule_res == FLOW_DEBUG:
-            import pdb
-
-            pdb.set_trace()
+            return rule_res
 
     if res:
         return Result(res)
