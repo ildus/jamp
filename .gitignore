@@ -12,3 +12,4 @@ build.ninja
 *.cache
 *.obj
 *.lib
+cscope.out

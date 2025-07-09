@@ -228,11 +228,26 @@ def exec_rule_action(state: State, rule: Rule, action_name: str, params: list):
                     if val:
                         Target.bind(state, val[0])
 
+    def try_collect(ua, src):
+        if ua.action.collect_together and ua.action == action:
+            ua.sources += src
+            return True
+
+        return False
+
     if prev_upd_action:
-        upd_action = UpdatingAction(action, sources)
-        upd_action.targets = linking_targets
-        upd_action.bindvars = bindvars
-        prev_upd_action.link(upd_action)
+        collected = try_collect(prev_upd_action, sources)
+        if not collected:
+            for ua in prev_upd_action.next:
+                collected = try_collect(ua, sources)
+                if collected:
+                    break
+
+        if not collected:
+            upd_action = UpdatingAction(action, sources)
+            upd_action.targets = linking_targets
+            upd_action.bindvars = bindvars
+            prev_upd_action.link(upd_action)
 
     if build_targets:
         # one build step, can output several targets

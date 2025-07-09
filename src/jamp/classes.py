@@ -31,6 +31,15 @@ def remove_overlapping(dirs: List):
     return result
 
 
+def chunks(lst, n):
+    """Yield n number of sequential chunks from lst."""
+
+    d, r = divmod(len(lst), n)
+    for i in range(n):
+        si = (d + 1) * (i if i < r else r) + d * (0 if i < r else i - r)
+        yield lst[si : si + (d + 1 if i < r else d)]
+
+
 class State:
     def __init__(
         self,
@@ -86,9 +95,7 @@ class State:
     def get_target(self, name):
         return self.targets.get(name)
 
-    def add_action_for_target(
-        self, target, action_name, generator=False, sources=None
-    ):
+    def add_action_for_target(self, target, action_name, generator=False, sources=None):
         sources = sources or []
         action = self.actions[action_name]
         upd_action = UpdatingAction(action, sources)
@@ -312,6 +319,15 @@ class Actions:
         self.flags = flags
         self.bindlist = bindlist
         self.commands = commands
+        self.collect_together = False
+        self.piecemeal = False
+
+        if flags:
+            for flag in flags:
+                if flag[1].lower() == "together":
+                    self.collect_together = True
+                elif flag[1].lower() == "piecemeal":
+                    self.piecemeal = True
 
     def __repr__(self):
         return f"Actions {self.name}"
@@ -714,6 +730,7 @@ class Target:
 
 class UpdatingAction:
     windows_cmd_join = "$\n$^"
+    windows_line_limit = 8000
 
     def __init__(self, action: Actions, sources: list):
         self.action = action
@@ -734,14 +751,15 @@ class UpdatingAction:
         self.next.append(upd_action)
         upd_action.base = self
 
-    def bound_params(self):
+    def bound_params(self, sources=None):
         res = []
         if self.targets:
             res.append([target.boundname for target in self.targets])
         else:
             res.append([])
 
-        res.append([source.boundname for source in self.sources if source.boundname])
+        sources = sources or self.sources
+        res.append([source.boundname for source in sources if source.boundname])
         return res
 
     def description(self):
@@ -771,7 +789,7 @@ class UpdatingAction:
     def is_alone(self):
         return not (bool(self.next) or bool(self.base))
 
-    def prepare_lines(self, state, comment_sym="#"):
+    def prepare_lines(self, state, comment_sym="#", limit=None):
         from jamp.expand import var_string
 
         saved_context = state.vars.current_context
@@ -791,11 +809,12 @@ class UpdatingAction:
             if line.startswith(comment_sym):
                 continue
 
+            orig_line = line
             line = var_string(
                 line,
                 self.bound_params(),
                 state.vars,
-                alone=self.is_alone(),
+                alone=self.is_alone() if limit is None else False,
             )
             line = line.replace("$", "$$")
             line = line.replace("<NINJA_SIGIL>", "$")
@@ -803,7 +822,32 @@ class UpdatingAction:
             if not line:
                 continue
 
-            yield line
+            if limit and len(line) > limit:
+                pieces = int(len(line) / limit) + 1
+
+                print(f"piecmeal {len(line)} to {pieces} chunks")
+
+                for src in chunks(self.sources, pieces):
+                    if not src:
+                        break
+
+                    line = var_string(
+                        orig_line,
+                        self.bound_params(sources=src),
+                        state.vars,
+                        alone=False,
+                    )
+                    line = line.replace("$", "$$")
+                    line = line.replace("<NINJA_SIGIL>", "$")
+
+                    print(f"piecmeal, result len = {len(line)}")
+
+                    if not line:
+                        break
+
+                    yield line
+            else:
+                yield line
 
         state.vars.current_context = saved_context
 
@@ -854,13 +898,13 @@ class UpdatingAction:
         return concat, True
 
     def prepare_windows_action(self, state: State):
-        """not tested"""
         quotes = []
         concat = ""
 
         new_cmd = None
+        limit = self.windows_line_limit if self.action.piecemeal else None
 
-        for line in self.prepare_lines(state, comment_sym="REM"):
+        for line in self.prepare_lines(state, comment_sym="REM", limit=limit):
             if new_cmd is not None:
                 concat += new_cmd
 

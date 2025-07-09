@@ -88,7 +88,8 @@ def compile_actions(state: State, flags, name, bindlist, script):
     if name not in state.rules:
         compile_rule(state, name, [], [])
 
-    state.actions[name] = Actions(name, flags, bindlist, script)
+    action = Actions(name, flags, bindlist, script)
+    state.actions[name] = action
 
 
 def compile_if(state: State, expr, true_block, false_block=None):
