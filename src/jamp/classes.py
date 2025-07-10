@@ -730,7 +730,7 @@ class Target:
 
 class UpdatingAction:
     windows_cmd_join = "$\n$^"
-    windows_line_limit = 8000
+    windows_line_limit = 7000
 
     def __init__(self, action: Actions, sources: list):
         self.action = action
@@ -825,8 +825,6 @@ class UpdatingAction:
             if limit and len(line) > limit:
                 pieces = int(len(line) / limit) + 1
 
-                print(f"piecmeal {len(line)} to {pieces} chunks")
-
                 for src in chunks(self.sources, pieces):
                     if not src:
                         break
@@ -839,8 +837,6 @@ class UpdatingAction:
                     )
                     line = line.replace("$", "$$")
                     line = line.replace("<NINJA_SIGIL>", "$")
-
-                    print(f"piecmeal, result len = {len(line)}")
 
                     if not line:
                         break
