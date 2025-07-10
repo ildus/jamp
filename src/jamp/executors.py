@@ -186,7 +186,7 @@ def exec_local_assign(state: State, names: Union[Arg, list], assign_list):
 
 
 def exec_rule_action(state: State, rule: Rule, action_name: str, params: list):
-    targets = lol_get(params, 0)
+    target_names = lol_get(params, 0)
     source_names = lol_get(params, 1)
     action = state.actions[action_name]
 
@@ -205,7 +205,7 @@ def exec_rule_action(state: State, rule: Rule, action_name: str, params: list):
     prev_upd_action = None
     build_targets = []
     linking_targets = []
-    for target_name in targets:
+    for target_name in target_names:
         target = Target.bind(state, target_name)
         if target.generated:
             generated = True
