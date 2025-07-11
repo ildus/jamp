@@ -184,7 +184,7 @@ def ninja_build(state: State, output):
 
             writer.rule(
                 upd_action.name,
-                command=f"cmd /C {resp_fn}",
+                command=f"cmd /Q /C {resp_fn}",
                 description=upd_action.description(),
                 rspfile=resp_fn,
                 rspfile_content=full_cmd,

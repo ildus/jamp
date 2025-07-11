@@ -728,6 +728,12 @@ class Target:
         return f"T:{self.name}"
 
 
+class Piecemeal(Exception):
+    """Raised when line exceeds limit"""
+
+    pieces = None
+
+
 class UpdatingAction:
     windows_cmd_join = "$\n$^"
     windows_line_limit = 7000
@@ -747,18 +753,20 @@ class UpdatingAction:
         self.bindvars = None
         self.bindparams = None
 
+        # for piecemal
+        self.source_chunks = None
+
     def link(self, upd_action):
         self.next.append(upd_action)
         upd_action.base = self
 
-    def bound_params(self, sources=None):
+    def bound_params(self, sources):
         res = []
         if self.targets:
             res.append([target.boundname for target in self.targets])
         else:
             res.append([])
 
-        sources = sources or self.sources
         res.append([source.boundname for source in sources if source.boundname])
         return res
 
@@ -790,6 +798,11 @@ class UpdatingAction:
         return not (bool(self.next) or bool(self.base))
 
     def prepare_lines(self, state, comment_sym="#", limit=None):
+        """
+        Returns the line.
+        If limit is set and more than limit, return to how
+        many pieces sources should be splitted
+        """
         from jamp.expand import var_string
 
         saved_context = state.vars.current_context
@@ -801,49 +814,38 @@ class UpdatingAction:
             state.vars.current_context.append(self.bindparams)
 
         lines = self.action.commands
+        chunks = self.source_chunks or (self.sources,)
+        alone = self.is_alone()
 
-        for line in lines.split("\n"):
-            line = line.strip()
-            if not line:
-                continue
-            if line.startswith(comment_sym):
-                continue
+        if self.source_chunks is not None or limit is not None:
+            alone = False
 
-            orig_line = line
-            line = var_string(
-                line,
-                self.bound_params(),
-                state.vars,
-                alone=self.is_alone() if limit is None else False,
-            )
-            line = line.replace("$", "$$")
-            line = line.replace("<NINJA_SIGIL>", "$")
+        for src in chunks:
+            for line in lines.split("\n"):
+                line = line.strip()
+                if not line:
+                    continue
+                if line.startswith(comment_sym):
+                    continue
 
-            if not line:
-                continue
+                line = var_string(
+                    line,
+                    self.bound_params(src),
+                    state.vars,
+                    alone=alone,
+                )
+                line = line.replace("$", "$$")
+                line = line.replace("<NINJA_SIGIL>", "$")
 
-            if limit and len(line) > limit:
-                pieces = int(len(line) / limit) + 1
+                if not line:
+                    continue
 
-                for src in chunks(self.sources, pieces):
-                    if not src:
-                        break
-
-                    line = var_string(
-                        orig_line,
-                        self.bound_params(sources=src),
-                        state.vars,
-                        alone=False,
-                    )
-                    line = line.replace("$", "$$")
-                    line = line.replace("<NINJA_SIGIL>", "$")
-
-                    if not line:
-                        break
-
+                if self.source_chunks is None and limit and len(line) > limit:
+                    exc = Piecemeal()
+                    exc.pieces = int(len(line) / limit) + 1
+                    raise exc
+                else:
                     yield line
-            else:
-                yield line
 
         state.vars.current_context = saved_context
 
@@ -1000,32 +1002,40 @@ class UpdatingAction:
         still_oneliner = True
 
         if not self.command:
-            if force_vms or check_vms():
-                base_lines, oneliner = self.prepare_vms_action(state)
-            elif force_windows or check_windows():
-                base_lines, oneliner = self.prepare_windows_action(state)
-            else:
-                base_lines, oneliner = self.prepare_action(state)
-
-            if not oneliner:
-                still_oneliner = False
-
-            if self.next:
-                still_oneliner = False
-
-                for next_upd_action in self.next:
-                    lines, _ = next_upd_action.get_command(state)
-                    if check_vms():
-                        base_lines += "$\n$^" + lines
-                    elif check_windows():
-                        base_lines += self.windows_cmd_join + lines
+            while True:
+                try:
+                    if force_vms or check_vms():
+                        base_lines, oneliner = self.prepare_vms_action(state)
+                    elif force_windows or check_windows():
+                        base_lines, oneliner = self.prepare_windows_action(state)
                     else:
-                        base_lines += " ; $\n" + lines
+                        base_lines, oneliner = self.prepare_action(state)
+                except Piecemeal as p:
+                    assert self.source_chunks is None
+                    self.source_chunks = chunks(self.sources, p.pieces)
+                    continue
 
-            if check_vms():
-                # just an empty line at the end
-                base_lines += "$\n$^$$"
+                if not oneliner:
+                    still_oneliner = False
 
-            self.command = base_lines
+                if self.next:
+                    still_oneliner = False
+
+                    for next_upd_action in self.next:
+                        lines, _ = next_upd_action.get_command(state)
+                        if check_vms():
+                            base_lines += "$\n$^" + lines
+                        elif check_windows():
+                            base_lines += self.windows_cmd_join + lines
+                        else:
+                            base_lines += " ; $\n" + lines
+
+                if check_vms():
+                    # just an empty line at the end
+                    base_lines += "$\n$^$$"
+
+                self.command = base_lines
+
+                break
 
         return self.command, still_oneliner
