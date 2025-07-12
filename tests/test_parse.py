@@ -276,3 +276,10 @@ def test_on_arg_return():
         "(ARG_ON_TARGET, AR, [test.a], '=', [ar ru]), "
         "(CALL, Echo, (LOL, [(RETURN_ON, test.a, [$(AR)])]))]"
     )
+
+def test_parse_lol_with_empty():
+    text = """
+    One 1 : : 2 ;
+    """
+    ast = parse(text)
+    assert str(ast) == "[(CALL, One, (LOL, [1], None, [2]))]"
