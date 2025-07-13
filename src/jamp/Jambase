@@ -1104,14 +1104,11 @@ rule SharedLibraryFromObjects
         local  _implib = $(4) ;
         local  _def    = $(3) ;
 
-        _implib ?= $(_l:S=$(SUFLIBSHR)) ;
+        _implib ?= $(_l:S=$(SUFLIB)) ;
         _def    ?= $(_l:S=.def) ;
 
         Clean    clean : $(_implib) ;
-        Depends  lib   : $(_implib) $(_def) ;
-
-        Depends $(_implib) : $(_def) $(_l) ;
-        Depends $(_l)      : $(_def) ;
+        Depends  lib   : $(_implib) ;
 
         DEFFILENAME on $(_l) = $(_def) ;
         IMPLIBNAME  on $(_l) = $(_implib) ;
@@ -1124,7 +1121,7 @@ rule SharedLibraryFromObjects
             SharedLink-$(JAM_TOOLSET) $(_l) : $(_s) : $(_implib) : $(_def) ;
         }
 
-        DllLink $(_l) : $(_s) ;
+        DllLink $(_l) $(_implib) : $(_s) ;
     }
     else
     {
@@ -2269,7 +2266,7 @@ if $(NT)
 
         actions DllLink bind NEEDLIBS DEFFILENAME IMPLIBNAME
         {
-            $(LINK) $(LINKFLAGS) /DLL /DEF:$(DEFFILENAME) /IMPLIB:$(IMPLIBNAME) /out:$(<) $(UNDEFS) $(>) $(NEEDLIBS) $(LINKLIBS)
+            $(LINK) $(LINKFLAGS) /DLL /DEF:$(DEFFILENAME) /IMPLIB:$(IMPLIBNAME) /out:$(<[1]) $(UNDEFS) $(>) $(NEEDLIBS) $(LINKLIBS)
         }
     }
     else if $(JAM_TOOLSET) = BORLANDC
@@ -2286,7 +2283,7 @@ if $(NT)
 
         actions DllLink bind NEEDLIBS DEFFILENAME
         {
-            $(ILINK) $(LINKFLAGS) $(>) , $(<) ,, $(LINKLIBS:E) $(NEEDLIBS:E) , $(DEFFILENAME)
+            $(ILINK) $(LINKFLAGS) $(>) , $(<[1]) ,, $(LINKLIBS:E) $(NEEDLIBS:E) , $(DEFFILENAME)
         }
 
         actions DllImplib bind DEFFILENAME
@@ -2323,7 +2320,7 @@ if $(NT)
 
         actions DllLink bind DEFFILENAME IMPLIBNAME
         {
-            $(LINK) $(LINKFLAGS) -shared -o $(<) $(>) $(DEFFILENAME) -Wl,--out-implib,$(IMPLIBNAME)
+            $(LINK) $(LINKFLAGS) -shared -o $(<[1]) $(>) $(DEFFILENAME) -Wl,--out-implib,$(IMPLIBNAME)
         }
     }
 }

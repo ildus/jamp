@@ -337,8 +337,7 @@ def expand_lol(state: State, arg: tuple):
     if isinstance(arg, tuple) and len(arg) and arg[0] == Node.LOL:
         res = []
         for lol_list in arg[1:]:
-            if lol_list:
-                res.append(expand(state, lol_list))
+            res.append(expand(state, lol_list))
     elif isinstance(arg, list):
         res = [[expand(state, item) for item in arg]]
     else:
