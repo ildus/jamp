@@ -724,3 +724,19 @@ Echo $(d)4 ;
     run(state, state.parse_and_compile(rules))
     output = "\n2\n3 3\n4 4 4\n"
     expect_output(output)
+
+
+def test_empty_suffix():
+    rules = """
+a = "asdf" ;
+
+if $(a:S) = ""
+{
+    Echo "ok" ;
+}
+    """
+
+    state = State()
+    run(state, state.parse_and_compile(rules))
+    output = "ok\n"
+    expect_output(output)

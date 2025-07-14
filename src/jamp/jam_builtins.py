@@ -6,9 +6,8 @@ import subprocess as sp
 from typing import Union
 from pathlib import Path
 
-from jamp.classes import State, Target, Exec
-from jamp.jam_syntax import Arg, Node
-from jamp.expand import var_expand, lol_get
+from jamp.classes import State, Target
+from jamp.expand import lol_get, expand
 from jamp.pattern import match
 
 
@@ -258,98 +257,3 @@ class Builtins:
                 self.nonzero_complained = True
 
         return Result([output])
-
-
-def flatten(res: list):
-    # try to remove one level
-    if isinstance(res, list) and len(res) == 1:
-        res = res[0]
-
-    return res
-
-
-def iter_var(var, skip_empty=True):
-    if isinstance(var, str):
-        yield var
-    elif isinstance(var, list):
-        for item in var:
-            yield item
-    else:
-        raise Exception(f"unexpected var for iteration: {var}")
-
-
-def validate(var):
-    if not isinstance(var, list):
-        raise Exception(f"validation: expected list, got: {var}")
-    if len(var) > 0:
-        if not isinstance(var[0], str):
-            raise Exception(f"validation: expected str on second level, got: {var[0]}")
-
-
-def validate_lol(var):
-    if not isinstance(var, list):
-        raise Exception(f"LOL validation: expected list, got: {var}")
-    if len(var) > 0:
-        if not isinstance(var[0], list):
-            raise Exception(
-                f"LOL validation: expected list on second level, got: {var[0]}"
-            )
-
-
-def expand(state: State, arg: Union[Arg, tuple, str], skip_empty=True):
-    """Make list of strings from some type of an argument"""
-
-    if arg is None or (skip_empty and arg == ""):
-        return []
-    elif arg == "":
-        return [""]
-    elif isinstance(arg, str):
-        res = var_expand(arg, state.params, state.vars)
-    elif isinstance(arg, Exec):
-        from jamp.executors import Result
-
-        execval = arg.execute(state)
-        if execval is None:
-            res = []
-        elif isinstance(execval, Result):
-            res = execval.val
-        else:
-            raise Exception(f"expected result, got {execval}")
-    elif isinstance(arg, Arg):
-        res = expand(state, arg.value, skip_empty=skip_empty)
-    elif isinstance(arg, list):
-        res = []
-        for item in arg:
-            val = expand(state, item, skip_empty=skip_empty)
-            for v in iter_var(val, skip_empty=skip_empty):
-                res.append(v)
-    else:
-        print(type(arg))
-        raise Exception(f"could not expand arg: {arg}")
-
-    validate(res)
-    return res
-
-
-def expand_lol(state: State, arg: tuple):
-    """Make string from some type of an argument"""
-
-    if isinstance(arg, tuple) and len(arg) and arg[0] == Node.LOL:
-        res = []
-        for lol_list in arg[1:]:
-            res.append(expand(state, lol_list))
-    elif isinstance(arg, list):
-        res = [[expand(state, item) for item in arg]]
-    else:
-        raise Exception(f"could not expand LOL: {arg}")
-
-    validate_lol(res)
-    return res
-
-
-def re_expand(state: State, string: str, params: list):
-    def exp(m: re.Match[str]) -> str:
-        expanded = var_expand(m.string[m.start() : m.end()], params, state.vars)
-        return " ".join(expanded)
-
-    return re.sub(r"\$\([^\(]+\)", exp, string)

@@ -1,14 +1,7 @@
 import os
 
-from jamp.jam_builtins import (
-    Builtins,
-    expand,
-    expand_lol,
-    output,
-    flatten,
-    iter_var,
-    lol_get,
-)
+from jamp.jam_builtins import (Builtins, output)
+from jamp.expand import expand, expand_lol, flatten, iter_var, lol_get
 from jamp.jam_syntax import Arg, Node
 from jamp.classes import Rule, State, Exec, Target, UpdatingAction
 from typing import Optional, Union
@@ -441,6 +434,7 @@ def evaluate_expr(state: State, args: tuple):
             right = evaluate_expr(state, right)
             match op:
                 case "=":
+                    print(left, right, type(left), type(right))
                     return left == right
                 case ">":
                     return left > right
