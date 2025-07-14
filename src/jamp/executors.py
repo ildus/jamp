@@ -434,7 +434,6 @@ def evaluate_expr(state: State, args: tuple):
             right = evaluate_expr(state, right)
             match op:
                 case "=":
-                    print(left, right, type(left), type(right))
                     return left == right
                 case ">":
                     return left > right
