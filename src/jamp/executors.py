@@ -503,13 +503,20 @@ def exec_for(state: State, var, items, block):
 
 def exec_switch(state: State, arg, cases):
     arg = expand(state, arg)
-    if arg:
-        for pattern, block in cases:
-            if match(pattern, arg[0]) == 0:
-                if len(block) and isinstance(block[0], list):
-                    return exec_block(state, block[0])
-                else:
-                    return run(state, block)
+
+    for pattern, block in cases:
+        matched = False
+        if not arg and pattern == "*":
+            matched = True
+
+        if arg and match(pattern, arg[0]) == 0:
+            matched = True
+
+        if matched:
+            if len(block) and isinstance(block[0], list):
+                return exec_block(state, block[0])
+            else:
+                return run(state, block)
 
 
 def exec_block(state, cmds):
