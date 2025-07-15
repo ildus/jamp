@@ -3,7 +3,9 @@ from jamp.classes import Vars, State, Exec
 from jamp.jam_syntax import Arg, Node
 from dataclasses import dataclass
 from typing import Union
+
 import itertools
+import re
 
 MAGIC_COLON = "\x01"
 MAGIC_LEFT = "\x02"
