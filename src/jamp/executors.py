@@ -1,6 +1,6 @@
 import os
 
-from jamp.jam_builtins import (Builtins, output)
+from jamp.jam_builtins import Builtins, output
 from jamp.expand import expand, expand_lol, flatten, iter_var, lol_get
 from jamp.jam_syntax import Arg, Node
 from jamp.classes import Rule, State, Exec, Target, UpdatingAction
@@ -29,7 +29,11 @@ def run(state: State, cmds: Union[list, Exec]) -> Optional[int]:
             return cmds.execute(state)
 
         for i, ex in enumerate(cmds):
-            ret = ex.execute(state)
+            if isinstance(ex, Exec):
+                ret = ex.execute(state)
+            elif isinstance(ex, list):
+                ret = run(state, ex)
+
             if ret:
                 # probably we need to break the execution
                 if ret in (FLOW_BREAK, FLOW_CONTINUE):
