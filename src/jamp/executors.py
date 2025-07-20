@@ -1,6 +1,6 @@
 import os
 
-from jamp.jam_builtins import Builtins, output
+from jamp.jam_builtins import Builtins, output, trace, traceinfo
 from jamp.expand import expand, expand_lol, flatten, iter_var, lol_get
 from jamp.jam_syntax import Arg, Node
 from jamp.classes import Rule, State, Exec, Target, UpdatingAction
@@ -93,6 +93,7 @@ def check_empty_val(assign_list):
     return False
 
 
+@trace("assign")
 def exec_assign(
     state: State, name_arg: Arg, assign_type: str, assign_list=None
 ) -> None:
@@ -129,6 +130,7 @@ def exec_assign(
             state.vars.set(name, value)
 
 
+@trace("assign on target")
 def exec_assign_on_target(
     state: State, name_arg: Arg, targets, assign_type: str, assign_list
 ):
@@ -170,10 +172,12 @@ def exec_continue(state: State, arg) -> int:
     return FLOW_CONTINUE
 
 
+@trace("return")
 def exec_return(state: State, retval) -> Result:
     return Result(expand(state, retval))
 
 
+@trace("local assign")
 def exec_local_assign(state: State, names: Union[Arg, list], assign_list):
     names = expand(state, names)
     value = expand(state, assign_list, skip_empty=False)
@@ -182,6 +186,7 @@ def exec_local_assign(state: State, names: Union[Arg, list], assign_list):
         state.vars.set_local(name, value)
 
 
+@trace("actions")
 def exec_rule_action(state: State, rule: Rule, action_name: str, params: list):
     target_names = lol_get(params, 0)
     source_names = lol_get(params, 1)
@@ -262,9 +267,13 @@ def exec_rule_action(state: State, rule: Rule, action_name: str, params: list):
         state.build_steps.append(step)
 
 
+@trace("one_rule")
 def exec_one_rule(state: State, name: str, params: list):
     builtin = getattr(builtins, name.lower(), None)
     if builtin:
+        if state.trace_on:
+            traceinfo(f"built-in: {name}")
+
         return builtin(state, params)
 
     rule: Rule = state.rules.get(name)
@@ -284,6 +293,9 @@ def exec_one_rule(state: State, name: str, params: list):
 
         return
 
+    if state.trace_on:
+        traceinfo(f"name: {name}")
+
     # create an updating action for actions block with the same name as the rule
     if name in state.actions:
         exec_rule_action(state, rule, name, params)
@@ -301,6 +313,7 @@ def exec_one_rule(state: State, name: str, params: list):
     return ret
 
 
+@trace("rules")
 def exec_rule(state: State, name: Arg, args):
     names = expand(state, name)
     params = expand_lol(state, args)
@@ -317,6 +330,7 @@ def exec_rule(state: State, name: Arg, args):
         return Result(res)
 
 
+@trace("include")
 def exec_include(state: State, location):
     filenames = expand(state, location)
 
@@ -325,6 +339,9 @@ def exec_include(state: State, location):
 
         with t.overlay(state):
             t.boundname = t.search(state)
+
+        if state.trace_on:
+            traceinfo(f"file: {t.boundname}")
 
         if state.debug_include:
             print(
@@ -348,11 +365,13 @@ def exec_include(state: State, location):
                 state.vars.pop()
 
 
+@trace("exec on target")
 def exec_on_target(state: State, targets, cmds):
     """
     on target statement
     run cmds under target vars influence
     """
+
     for target_name in expand(state, targets):
         target = state.get_target(target_name)
 
@@ -360,6 +379,7 @@ def exec_on_target(state: State, targets, cmds):
             run(state, cmds)
 
 
+@trace("rule on target")
 def exec_rule_on_target(state: State, targets, name, args):
     """
     [ on target rule args ]
@@ -381,6 +401,7 @@ def exec_rule_on_target(state: State, targets, name, args):
         return Result(res)
 
 
+@trace("return on target")
 def exec_return_on_target(state: State, targets, val):
     """
     [ on target return val ]
@@ -469,8 +490,12 @@ def evaluate_expr(state: State, args: tuple):
             raise ExecutionError(f"could not match an expression: {args}")
 
 
+@trace("if", len_args=1)
 def exec_if(state: State, cond, block, else_block):
     res = var_bool(evaluate_expr(state, cond))
+
+    if state.trace_on:
+        traceinfo(f"evaluated to: {res}")
 
     if res is True:
         return exec_block(state, block)
@@ -478,6 +503,7 @@ def exec_if(state: State, cond, block, else_block):
         return exec_block(state, else_block)
 
 
+@trace("while")
 def exec_while(state: State, cond, block):
     while var_bool(evaluate_expr(state, cond)):
         ret = exec_block(state, block)
@@ -487,6 +513,7 @@ def exec_while(state: State, cond, block):
             continue
 
 
+@trace("for")
 def exec_for(state: State, var, items, block):
     items = expand(state, items)
     if isinstance(items, str):
@@ -505,6 +532,7 @@ def exec_for(state: State, var, items, block):
             continue
 
 
+@trace("switch", len_args=1)
 def exec_switch(state: State, arg, cases):
     arg = expand(state, arg)
 
@@ -517,6 +545,10 @@ def exec_switch(state: State, arg, cases):
             matched = True
 
         if matched:
+            if state.trace_on:
+                traceinfo(f"value: {arg[0]}")
+                traceinfo(f"matched on pattern: {pattern}")
+
             if len(block) and isinstance(block[0], list):
                 return exec_block(state, block[0])
             else:
