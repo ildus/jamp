@@ -22,6 +22,7 @@ class Builtins:
     """Singleton with builtin rules"""
 
     output = ""
+    traceback = None
 
     def __init__(self):
         self.dir_counter = 0
@@ -257,3 +258,53 @@ class Builtins:
                 self.nonzero_complained = True
 
         return Result([output])
+
+    @classmethod
+    def backtrace(cls, *args):
+        if cls.traceback is None:
+            return
+
+        print("\nTraceback (jamp):")
+        for i, t in enumerate(reversed(cls.traceback)):
+            if i == 0:
+                continue
+
+            if isinstance(t, list):
+                print(f"\t{i}: {t[0]}")
+                for item in t[1:]:
+                    print(f"\t\t{item}")
+
+            else:
+                print(f"\t{i}: {t}")
+        print("")
+
+
+def trace(name: str, len_args=None):
+    def inner1(func):
+        def inner(state: State, *args, **kwargs):
+            args_to_print = args if len_args is None else args[:len_args]
+
+            if Builtins.traceback is not None:
+                Builtins.traceback.append(f"{name} {args_to_print}")
+
+            res = func(state, *args, **kwargs)
+            if Builtins.traceback is not None:
+                Builtins.traceback.pop()
+
+            return res
+
+        return inner
+
+    return inner1
+
+
+def traceinfo(text):
+    if not Builtins.traceback:
+        return
+
+    last = Builtins.traceback.pop()
+    if not isinstance(last, list):
+        last = [last]
+
+    last.append(text)
+    Builtins.traceback.append(last)

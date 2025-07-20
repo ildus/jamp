@@ -5,7 +5,7 @@ import subprocess as sp
 
 from collections import OrderedDict
 
-from jamp import executors, headers
+from jamp import executors, headers, jam_builtins
 from jamp.classes import State, Target, UpdatingAction
 from jamp.paths import check_vms, escape_path, add_paths, check_windows
 
@@ -21,6 +21,7 @@ def parse_args(skip_args=False):
     parser.add_argument("-b", "--build", action="store_true", help="call ninja")
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
     parser.add_argument("--profile", action="store_true", help="profile the execution")
+    parser.add_argument("--trace", action="store_true", help="enable traceback")
     parser.add_argument(
         "--depfiles",
         action="store_true",
@@ -81,8 +82,12 @@ def main_app(args):
         debug_env="env" in args.debug,
         target=args.target,
         unwrap_phony=args.unwrap_phony,
+        trace_on=args.trace,
     )
     jamfile = args.jamfile
+
+    if args.trace:
+        jam_builtins.Builtins.traceback = []
 
     state.vars.set("JAMFILE", [jamfile])
     state.vars.set("JAMP_PYTHON", [sys.executable])
@@ -111,7 +116,12 @@ def main_app(args):
     if args.verbose:
         print("...execution...")
 
-    executors.run(state, cmds)
+    try:
+        executors.run(state, cmds)
+    except:
+        jam_builtins.Builtins.backtrace()
+        raise
+
     if args.verbose:
         print("...binding targets and searching headers...")
 

@@ -50,6 +50,7 @@ class State:
         debug_env=False,
         target=None,
         unwrap_phony=None,
+        trace_on=False,
     ):
         self.headers_complained = False
         self.verbose = verbose
@@ -66,6 +67,7 @@ class State:
         self.debug_include = debug_include
         self.limit_target = target
         self.unwrap_phony = unwrap_phony
+        self.trace_on = trace_on
 
         # reverse location->target map
         self.target_locations = {}
