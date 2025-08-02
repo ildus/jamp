@@ -277,40 +277,64 @@ On VMS, $(var:P) is the parent directory of $(var:D); on Unix and NT, $(var:P) a
 
 ### Built-in Rules
 
-`Jam` has twelve built-in rules, all of which are pure procedure rules without updating actions. They are in three groups: the first builds the dependency graph; the second modifies it; and the third are just utility rules.
+`Jam` has twelve built-in rules, all of which are pure procedure rules without updating actions.
+They are in three groups: the first builds the dependency graph;
+the second modifies it; and the third are just utility rules.
 
 #### Dependency Building
 
-`DEPENDS targets1 : targets2 ;`
+`Depends targets1 : targets2 ;`
 
-Builds a direct dependency: makes each of *targets1* depend on each of *targets2*. Generally, *targets1* will be rebuilt if *targets2* are themselves rebuilt are or are newer than *targets1*.
+Builds a direct dependency: makes each of *targets1* depend on each of *targets2*.
+Generally, *targets1* will be rebuilt if *targets2* are themselves rebuilt
+are or are newer than *targets1*.
 
-`INCLUDES targets1 : targets2 ;`
+`Includes targets1 : targets2 ;`
 
-Builds a sibling dependency: makes any target that depends on any of *targets1* also depend on each of *targets2*. This reflects the dependencies that arise when one source file includes another: the object built from the source file depends both on the original and included source file, but the two sources files don't depend on each other. For example:
+Builds a sibling dependency: makes any target that depends on any of *targets1*
+also depend on each of *targets2*. This reflects the dependencies that arise
+when one source file includes another: the object built from the source
+file depends both on the original and included source file, but the two
+sources files don't depend on each other. For example:
 
 ```
-DEPENDS foo.o : foo.c ;
-INCLUDES foo.c : foo.h ;
+Depends foo.o : foo.c ;
+Includes foo.c : foo.h ;
 ```
 
 "foo.o" depends on "foo.c" and "foo.h" in this example.
 
 #### Modifying Binding
 
-The six rules ALWAYS, LEAVES, NOCARE, NOTFILE, NOUPDATE, and TEMPORARY modify the dependency graph so that `Jam` treats the targets differently during its target binding phase. See [Binding](#binding) above. Normally, `Jam` updates a target if it is missing, if its filesystem modification time is older than any of its dependencies (recursively), or if any of its dependencies are being updated. This basic behavior can be changed by invoking the following rules:
+The six rules ALWAYS, LEAVES, NOCARE, NOTFILE, NOUPDATE, and TEMPORARY modify
+the dependency graph so that `Jam` treats the targets differently during its
+target binding phase. See [Binding](#binding) above. Normally, `Jam` updates
+a target if it is missing, if its filesystem modification time is older than
+any of its dependencies (recursively), or if any of its dependencies are
+being updated. This basic behavior can be changed by invoking the following
+rules:
 
 `ALWAYS targets ;`
 
 Causes *targets* to be rebuilt regardless of whether they are up-to-date (they must still be in the dependency graph). This is used for the clean and uninstall targets, as they have no dependencies and would otherwise appear never to need building. It is best applied to targets that are also NOTFILE targets, but it can also be used to force a real file to be updated as well.
 
-`LEAVES targets ;`
+`LEAVES targets ;` (not implemented for now)
 
-Makes each of *targets* depend only on its leaf sources, and not on any intermediate targets. This makes it immune to its dependencies being updated, as the "leaf" dependencies are those without their own dependencies and without updating actions. This allows a target to be updated only if original source files change.
+Makes each of *targets* depend only on its leaf sources, and not on any
+intermediate targets. This makes it immune to its dependencies being
+updated, as the "leaf" dependencies are those without their own dependencies
+and without updating actions. This allows a target to be updated only
+if original source files change.
 
 `NOCARE targets ;`
 
-Causes `Jam` to ignore *targets* that neither can be found nor have updating actions to build them. Normally for such targets `Jam` issues a warning and then skips other targets that depend on these missing targets. The HdrRule in Jambase uses NOCARE on the header file names found during header file scanning, to let `Jam` know that the included files may not exist. For example, if a #include is within an #ifdef, the included file may not actually be around.
+Causes `Jam` to ignore *targets* that neither can be found nor have updating
+actions to build them. Normally for such targets `Jam` issues a warning and
+then skips other targets that depend on these missing targets.
+The HdrRule in Jambase uses NOCARE on the header file names found during
+header file scanning, to let `Jam` know that the included files may not exist.
+For example, if a #include is within an #ifdef, the included file may not
+actually be around.
 
 `NOTFILE targets ;`
 
@@ -328,21 +352,27 @@ Marks *targets* as temporary, allowing them to be removed after other targets th
 
 The remaining rules are utility rules.
 
-`ECHO args ; Echo args ; echo args ;`
+`Echo args ;`
 
 Blurts out the message *args* to stdout.
 
-`EXIT args ; Exit args ; exit args ;`
+`Exit args ;`
 
 Blurts out the message *args* to stdout and then exits with a failure status.
 
 `GLOB directories : patterns ;`
 
-Scans *directories* for files matching *patterns*, returning the list of matching files (with directory prepended). *patterns* uses the same syntax as in the **switch** statement. Only useful within the `[ ]` construct, to change the result into a list.
+Scans *directories* for files matching *patterns*, returning the list of
+matching files (with directory prepended).
+*patterns* uses the same syntax as in the **switch** statement.
+Only useful within the `[ ]` construct, to change the result into a list.
 
 `MATCH regexps : list ;`
 
-Matches the **egrep**(1) style regular expressions *regexps* against the strings in *list*. The result is the concatenation of matching `()` subexpressions for each string in *list*, and for each regular expression in *regexps*. Only useful within the `[ ]` construct, to change the result into a list.
+Matches the **egrep**(1) style regular expressions *regexps* against the strings in *list*.
+The result is the concatenation of matching `()` subexpressions for each string in *list*,
+and for each regular expression in *regexps*.
+Only useful within the `[ ]` construct, to change the result into a list.
 
 ### Built-in Variables
 
