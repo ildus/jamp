@@ -832,6 +832,7 @@ class UpdatingAction:
                     line,
                     self.bound_params(src),
                     state.vars,
+                    len(self.targets),
                     alone=alone,
                 )
                 line = line.replace("$", "$$")

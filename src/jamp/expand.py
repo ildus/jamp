@@ -367,7 +367,9 @@ def var_edit_quote(string):
     return string.replace("\\", "\\\\")
 
 
-def var_string(var: str, lol: list, state_vars: Union[Vars, dict], alone=False):
+def var_string(
+    var: str, lol: list, state_vars: Union[Vars, dict], targets_cnt: int, alone=False
+):
     res = ""
 
     i = 0
@@ -386,7 +388,13 @@ def var_string(var: str, lol: list, state_vars: Union[Vars, dict], alone=False):
         text = var[begin:i]
         if not dollar_found:
             res += text
-        elif alone and text == "$(<)":
+            continue
+
+        if alone and targets_cnt == 1 and "$(<)" in text:
+            # easy case, no need to expand the list
+            text = text.replace("$(<)", "<NINJA_SIGIL>out")
+
+        if alone and text == "$(<)":
             res += "<NINJA_SIGIL>out"
         elif alone and text == "$(>)":
             res += "<NINJA_SIGIL>in <NINJA_SIGIL>n"
