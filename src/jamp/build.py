@@ -9,6 +9,9 @@ from jamp import executors, headers
 from jamp.classes import State, Target, UpdatingAction
 from jamp.paths import check_vms, escape_path, add_paths, check_windows
 
+windows_common_cmds = ["cl", "cl.exe", "cp", "copy"]
+windows_oneliners = [" & ", " && ", " | ", " || ", "^T"]
+
 
 def parse_args(skip_args=False):
     parser = argparse.ArgumentParser(
@@ -179,18 +182,41 @@ def ninja_build(state: State, output):
 
             saved.append((upd_action.name, full_cmd))
 
-        if not oneliner and check_windows():
-            resp_fn = f"{upd_action.name}$step.bat"
+        if check_windows():
+            if not oneliner:
+                resp_fn = f"{upd_action.name}$step.bat"
 
-            writer.rule(
-                upd_action.name,
-                command=f"cmd /Q /C {resp_fn}",
-                description=upd_action.description(),
-                rspfile=resp_fn,
-                rspfile_content=full_cmd,
-                restat=upd_action.restat,
-                generator=upd_action.generator,
-            )
+                writer.rule(
+                    upd_action.name,
+                    command=f"cmd /Q /C {resp_fn}",
+                    description=upd_action.description(),
+                    rspfile=resp_fn,
+                    rspfile_content=full_cmd,
+                    restat=upd_action.restat,
+                    generator=upd_action.generator,
+                )
+            else:
+                add_cmd = True
+
+                # little hack to avoid cmd.exe in Windows
+                for cmd in windows_common_cmds:
+                    if full_cmd.startswith(cmd):
+                        add_cmd = False
+
+                        for sep in windows_oneliners:
+                            if sep in full_cmd:
+                                add_cmd = True
+
+                if add_cmd:
+                    full_cmd = "cmd /Q /C " + full_cmd
+
+                writer.rule(
+                    upd_action.name,
+                    command=full_cmd,
+                    description=upd_action.description(),
+                    restat=upd_action.restat,
+                    generator=upd_action.generator,
+                )
         elif not oneliner and check_vms():
             # rule can be reused from saved, need the unique number for the resp file name
             resp_fn = f"{upd_action.name}$step.com"
@@ -229,11 +255,13 @@ def ninja_build(state: State, output):
             gen_headers[dep.boundname] = None
 
     for target in state.targets.values():
-        implicit, order_only = (escape_path(i) for i in target.get_dependency_list(state))
+        implicit, order_only = (
+            escape_path(i) for i in target.get_dependency_list(state)
+        )
         if target.notfile:
             kwargs = {}
             if target.is_dirs_target:
-                kwargs["order_only"] = (implicit | order_only)
+                kwargs["order_only"] = implicit | order_only
             else:
                 kwargs["order_only"] = order_only
                 kwargs["implicit"] = implicit
@@ -248,8 +276,12 @@ def ninja_build(state: State, output):
 
             implicit_deps = (escape_path(i) for i in target.collection[0])
             order_only_deps = (escape_path(i) for i in target.collection[1])
-            writer.build(target.collection_name(), "phony", implicit=implicit_deps,
-                         order_only=order_only_deps)
+            writer.build(
+                target.collection_name(),
+                "phony",
+                implicit=implicit_deps,
+                order_only=order_only_deps,
+            )
             phonies[target.collection_name()] = True
 
     for stepnum, step in enumerate(state.build_steps):

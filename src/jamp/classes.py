@@ -900,14 +900,16 @@ class UpdatingAction:
         quotes = []
         concat = ""
 
-        new_cmd = None
+        oneliner = True
+        add_newline = False
         limit = self.windows_line_limit if self.action.piecemeal else None
 
         for line in self.prepare_lines(state, comment_sym="REM", limit=limit):
-            if new_cmd is not None:
-                concat += new_cmd
+            if add_newline:
+                oneliner = False
+                concat += self.windows_cmd_join
 
-            new_cmd = None
+            add_newline = False
 
             # watch for open quotes and redirections
             for c in line:
@@ -924,9 +926,9 @@ class UpdatingAction:
                 concat += line
             else:
                 concat += line
-                new_cmd = self.windows_cmd_join
+                add_newline = True
 
-        return concat, False
+        return concat, oneliner
 
     def prepare_vms_action(self, state: State):
         quotes = []
