@@ -765,7 +765,7 @@ class UpdatingAction:
     def bound_params(self, sources):
         res = []
         if self.targets:
-            res.append([target.boundname for target in self.targets])
+            res.append([target.boundname for target in self.targets if target.boundname])
         else:
             res.append([])
 
