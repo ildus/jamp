@@ -1,4 +1,6 @@
 import os
+import graphlib
+
 from typing import List, Union, Set
 from functools import cache
 
@@ -439,7 +441,7 @@ class Target:
         self.headers = None
 
         # Circular search
-        self.circular_visited = False
+        self.circular_visited = 0
 
         # NoCare rule
         self.nocare = False
@@ -689,39 +691,47 @@ class Target:
 
             self.includes.add(target)
 
-    def search_for_cycles(self, verbose=False, graph=None):
-        try:
-            import networkx
-        except ImportError:
-            print("!!! install `networkx` package to fix circular dependency errors")
+    def search_for_cycles(self, verbose=False, graph=None, cpass=0):
+        if self.circular_visited > cpass:
             return
 
-        if self.circular_visited:
-            return
-
-        self.circular_visited = True
+        self.circular_visited += 1
 
         top = False
         if graph is None:
             top = True
-            graph = networkx.DiGraph()
+            graph = graphlib.TopologicalSorter()
 
         for inc in self.includes:
-            graph.add_edge(self, inc)
-            inc.search_for_cycles(graph=graph)
+            graph.add(self, inc)
+            inc.search_for_cycles(graph=graph, cpass=cpass)
 
         for dep in self.depends:
-            dep.search_for_cycles(graph=graph)
+            dep.search_for_cycles(graph=graph, cpass=cpass)
 
         if top:
-            for cycle in networkx.simple_cycles(graph):
-                if verbose:
-                    print(f"removed circular dependency: {cycle[0]} from {cycle[-1]}")
+            cycle: list[Target] = None
+            try:
+                graph.prepare()
+            except graphlib.CycleError as e:
+                cycle = e.args[1]
 
+            removed = False
+            if cycle is not None:
                 try:
-                    cycle[-1].includes.remove(cycle[0])
+                    cycle[-1].includes.remove(cycle[-2])
+                    removed = True
+
+                    if verbose:
+                        print(
+                            f"removed circular dependency: {cycle[-2]} from {cycle[-1]}"
+                        )
                 except KeyError:
                     pass
+
+            # we removed one, now we need another pass
+            if removed:
+                return self.search_for_cycles(verbose=verbose, cpass=cpass + 1)
 
     def __hash__(self):
         return hash(self.name)
@@ -765,7 +775,9 @@ class UpdatingAction:
     def bound_params(self, sources):
         res = []
         if self.targets:
-            res.append([target.boundname for target in self.targets if target.boundname])
+            res.append(
+                [target.boundname for target in self.targets if target.boundname]
+            )
         else:
             res.append([])
 

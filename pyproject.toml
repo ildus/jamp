@@ -1,6 +1,6 @@
 [project]
 name = "jam-build"
-version = "0.7.1"
+version = "0.7.2"
 authors = [
   { name="Ildus Kurbangaliev", email="i.kurbangaliev@gmail.com" },
 ]
@@ -11,9 +11,6 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
-]
-dependencies = [
-  'networkx >= 3',
 ]
 
 [project.urls]
