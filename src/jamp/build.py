@@ -265,9 +265,10 @@ def ninja_build(state: State, output):
             gen_headers[dep.boundname] = None
 
     for target in state.targets.values():
-        implicit, order_only = (
-            escape_path(i) for i in target.get_dependency_list(state)
-        )
+        implicit, order_only = target.get_dependency_list(state)
+        implicit = set(escape_path(i) for i in implicit)
+        order_only = set(escape_path(i) for i in order_only)
+
         if target.notfile:
             kwargs = {}
             if target.is_dirs_target:
