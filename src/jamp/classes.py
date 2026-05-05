@@ -177,6 +177,11 @@ class Vars:
 
         self.scope["OSPLAT"] = platform.machine()
         self.scope["OS"] = platform.system().upper()
+
+        # same as in original jam
+        if platform.system() == "Darwin":
+            self.scope["OS"] = "MACOSX"
+
         self.scope["JAMUNAME"] = platform.uname()
         self.scope["JAMVERSION"] = "2.6.1"
         self.scope["JAMCOUNTER"] = "<NINJA_SIGIL>step"
