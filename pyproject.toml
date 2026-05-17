@@ -1,6 +1,6 @@
 [project]
 name = "jam-build"
-version = "0.7.2"
+version = "0.7.4"
 authors = [
   { name="Ildus Kurbangaliev", email="i.kurbangaliev@gmail.com" },
 ]
