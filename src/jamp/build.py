@@ -156,6 +156,9 @@ def ninja_build(state: State, output):
 
     writer = Writer(output, width=120)
 
+    if check_windows():
+        writer.required_version("1.14")
+
     target: Target = None
 
     counter = 0

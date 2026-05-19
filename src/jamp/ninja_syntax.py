@@ -148,6 +148,9 @@ class Writer(object):
 
         return outputs
 
+    def required_version(self, version: str) -> None:
+        self._line("ninja_required_version = %s" % version)
+
     def include(self, path: str) -> None:
         self._line("include %s" % path)
 
