@@ -67,14 +67,30 @@ class State:
         self.unwrap_phony = unwrap_phony
         self.trace_on = trace_on
 
-        # reverse location->target map
+        # Reverse location->target map.
         self.target_locations = {}
+
+        # Files are only inspected while generating build.ninja, before Ninja
+        # can create or remove outputs. Cache both successful and failed stats
+        # to avoid repeated filesystem lookups (particularly expensive on VMS).
+        self.file_stats: dict[str, os.stat_result | None] = {}
 
         # Header-name macros registered by the HdrMacro builtin.
         self.header_macros = {}
 
         # skipped from scanning headers, just a cache
         self.scan_skipped = set()
+
+    def file_stat(self, path: str) -> os.stat_result | None:
+        if path not in self.file_stats:
+            try:
+                self.file_stats[path] = os.stat(path)
+            except OSError:
+                self.file_stats[path] = None
+        return self.file_stats[path]
+
+    def file_exists(self, path: str) -> bool:
+        return self.file_stat(path) is not None
 
     def sub_root(self):
         sub_root = self.vars.get("SUBDIR_ROOT")
@@ -657,7 +673,7 @@ class Target:
                 if res_path in state.target_locations:
                     # this could be a generated file, and if it's in targets just return that path
                     return res_path
-                elif os.path.exists(res_path):
+                elif state.file_exists(res_path):
                     return res_path
 
         # recreate
@@ -666,7 +682,7 @@ class Target:
         path.grist = ""
         res_path = path.build(binding=True)
 
-        if strict and os.path.exists(res_path):
+        if strict and state.file_exists(res_path):
             return res_path
 
         return res_path if not strict else None

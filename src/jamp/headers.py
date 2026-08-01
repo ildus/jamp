@@ -108,11 +108,9 @@ def target_find_headers(state, target, db: dict | None = None) -> bool:
 
     ts = None
     if headers is None:
-        try:
-            ts = os.path.getmtime(target.boundname)
-        except FileNotFoundError:
-            ts = None
-        else:
+        stat = state.file_stat(target.boundname)
+        if stat is not None:
+            ts = stat.st_mtime
             # Macro definitions can change independently of the source file.
             # Do not reuse source-only cache entries when HdrMacro is active.
             if not state.header_macros:
@@ -205,7 +203,7 @@ def scan_headers(state, fn: str, hdrscan: tuple):
     for pattern in hdrscan:
         patterns.append(re.compile(pattern))
 
-    if not os.path.exists(fn):
+    if not state.file_exists(fn):
         if not state.verbose and not state.headers_complained:
             print(
                 "jamp: errors while headers searching, "

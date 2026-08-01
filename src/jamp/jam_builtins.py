@@ -88,7 +88,7 @@ class Builtins:
             p = Pathname()
             p.parse(paths[0])
             p.grist = ""
-            if os.path.exists(p.build()):
+            if state.file_exists(p.build()):
                 res = ["1"]
 
         return Result(res)

@@ -1,4 +1,3 @@
-import os
 import sys
 
 from jamp.classes import Exec, Rule, State, Target, UpdatingAction
@@ -342,7 +341,7 @@ def exec_include(state: State, location):
                 f"Including {t.boundname}, target: {filename}, expanded from: {location}"
             )
 
-        if not t.boundname or not os.path.exists(t.boundname):
+        if not t.boundname or not state.file_exists(t.boundname):
             print(f"Include failed on file: {t.boundname}")
             sys.exit(1)
         else:

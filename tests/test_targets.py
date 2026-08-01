@@ -6,6 +6,25 @@ from jamp.classes import State, Target
 from jamp.executors import run
 
 
+def test_file_stat_cache(tmp_path, monkeypatch):
+    source = tmp_path / "source.c"
+    source.write_text("")
+    state = State()
+    original_stat = os.stat
+    calls = 0
+
+    def count_stat(path, *args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return original_stat(path, *args, **kwargs)
+
+    monkeypatch.setattr(os, "stat", count_stat)
+
+    assert state.file_exists(str(source))
+    assert state.file_stat(str(source)) is not None
+    assert calls == 1
+
+
 def test_global_locate_search():
     state = State()
     target = Target.bind(state, "test.c")
