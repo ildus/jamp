@@ -456,22 +456,26 @@ def p_error(p):
         print("Syntax error")
 
 
+_parser = None
+
+
+def get_parser():
+    """Build the grammar once and reuse it for all Jamfiles in this run."""
+    global _parser
+    if _parser is None:
+        _parser = yacc()
+    return _parser
+
+
 def parse(text: str, filename: str | None = None):
-    parser = yacc()
     lexer = Lexer(filename=filename)
     lexer.input(text)
-    return parser.parse(lexer=lexer)
+    return get_parser().parse(lexer=lexer)
 
 
 def parse_file(fn: str):
-    parser = yacc()
-
     with open(fn) as f:
-        data = f.read()
-
-    lexer = Lexer()
-    lexer.input(data)
-    return parser.parse(lexer=lexer)
+        return parse(f.read(), filename=fn)
 
 
 if __name__ == "__main__":

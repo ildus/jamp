@@ -1,4 +1,15 @@
+from jamp import jam_syntax
 from jamp.jam_syntax import parse
+
+
+def test_parser_is_reused(monkeypatch):
+    monkeypatch.setattr(jam_syntax, "_parser", None)
+
+    jam_syntax.parse("a = 1 ;")
+    parser = jam_syntax._parser
+    jam_syntax.parse("b = 2 ;")
+
+    assert jam_syntax._parser is parser
 
 
 def test_simple_assign_sequence():
