@@ -7,7 +7,14 @@ from functools import cache
 headers_cache = None
 headers_cache_loaded = None
 FN_CACHE = "jamp_saved_headers.cache"
-HEADERS_CACHE_VERSION = 1
+HEADERS_CACHE_VERSION = 2
+
+HEADER_MACRO_DEFINE_RE = re.compile(
+    r'^[ \t]*#[ \t]*define[ \t]*([A-Za-z][A-Za-z0-9_]*)[ \t]*[<"]([^">]*)[">].*$'
+)
+HEADER_MACRO_INCLUDE_RE = re.compile(
+    r"^[ \t]*#[ \t]*include[ \t]*([A-Za-z][A-Za-z0-9_]*).*$"
+)
 
 
 def load_headers_cache():
@@ -42,6 +49,23 @@ def save_headers_cache():
             print(f"jamp: could not save to headers cache to {FN_CACHE}: {e}")
             if os.path.exists(FN_CACHE):
                 os.unlink(FN_CACHE)
+
+
+def scan_header_macros(state, fn: str) -> None:
+    """Record ``#define NAME <header>`` declarations from *fn*.
+
+    This implements FT-Jam's HdrMacro builtin. The first definition wins,
+    matching the original implementation.
+    """
+    try:
+        with open(fn, errors="surrogateescape") as f:
+            for line in f:
+                match = HEADER_MACRO_DEFINE_RE.match(line)
+                if match:
+                    name, header = match.groups()
+                    state.header_macros.setdefault(name, header)
+    except OSError:
+        return
 
 
 def get_cached_headers(state, fn: str, timestamp: float):
@@ -89,7 +113,13 @@ def target_find_headers(state, target, db: dict | None = None) -> bool:
         except FileNotFoundError:
             ts = None
         else:
-            headers = get_cached_headers(state, target.boundname, ts)
+            # Macro definitions can change independently of the source file.
+            # Do not reuse source-only cache entries when HdrMacro is active.
+            if not state.header_macros:
+                headers = get_cached_headers(state, target.boundname, ts)
+
+    if headers is not None and state.header_macros:
+        headers = [*headers, *scan_header_macro_includes(state, target.boundname)]
 
     target.headers = headers or scan_headers(state, target.boundname, tuple(hdrscan))
 
@@ -101,7 +131,7 @@ def target_find_headers(state, target, db: dict | None = None) -> bool:
             print(target.name, target.headers)
 
     if target.headers:
-        if ts is not None and headers is None:
+        if ts is not None and headers is None and not state.header_macros:
             headers_cache[target.boundname] = (ts, target.headers)
 
         lol.append(target.headers)
@@ -153,6 +183,22 @@ def skip_include(state, boundname):
     return False
 
 
+def scan_header_macro_includes(state, fn: str) -> list[str]:
+    """Return headers referenced through registered header-name macros."""
+    headers = []
+    try:
+        with open(fn, errors="surrogateescape") as f:
+            for line in f:
+                macro_include = HEADER_MACRO_INCLUDE_RE.match(line)
+                if macro_include:
+                    header = state.header_macros.get(macro_include.group(1))
+                    if header:
+                        headers.append(header)
+    except OSError:
+        return []
+    return headers
+
+
 @cache
 def scan_headers(state, fn: str, hdrscan: tuple):
     patterns = []
@@ -173,12 +219,13 @@ def scan_headers(state, fn: str, hdrscan: tuple):
         return
 
     headers = []
-    for pattern in patterns:
-        with open(fn, errors="surrogateescape") as f:
-            for i, line in enumerate(f):
-                for m in re.finditer(pattern, line):
-                    headers += list(m.groups())
+    with open(fn, errors="surrogateescape") as f:
+        for line in f:
+            for pattern in patterns:
+                for match in pattern.finditer(line):
+                    headers += list(match.groups())
 
+    headers.extend(scan_header_macro_includes(state, fn))
     return headers
 
 

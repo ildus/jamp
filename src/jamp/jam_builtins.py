@@ -185,6 +185,16 @@ class Builtins:
             target = Target.bind(state, target_name)
             target.restat = True
 
+    def hdrmacro(self, state: State, paths_arg: list):
+        """Register header-name macros defined by the supplied files."""
+        from jamp.headers import scan_header_macros
+
+        for path in expand(state, paths_arg):
+            target = Target.bind(state, path)
+            target.bind_location(state)
+            if target.boundname:
+                scan_header_macros(state, target.boundname)
+
     def temporary(self, state: State, targets: list):
         targets = expand(state, targets)
         for target_name in targets:

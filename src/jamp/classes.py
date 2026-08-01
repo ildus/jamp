@@ -70,6 +70,9 @@ class State:
         # reverse location->target map
         self.target_locations = {}
 
+        # Header-name macros registered by the HdrMacro builtin.
+        self.header_macros = {}
+
         # skipped from scanning headers, just a cache
         self.scan_skipped = set()
 
