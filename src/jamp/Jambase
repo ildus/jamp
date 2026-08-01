@@ -169,11 +169,8 @@ JAMBASEDATE = 2024.12.11 ;
 
 if $(NT)
 {
-    # the list of supported toolsets on Windows NT and Windows 95/98
-    #
-    local SUPPORTED_TOOLSETS = BORLANDC
-                               VISUALC
-                               INTELC
+    # Supported Windows toolsets.
+    local SUPPORTED_TOOLSETS = MSVC
                                MINGW
                                ;
 
@@ -193,44 +190,24 @@ if $(NT)
         }
     }
 
-    # if JAM_TOOLSET is empty, we'll try to detect the toolset from other
-    # environment variables to remain backwards compatible with Jam 2.5
-    #
+    # If JAM_TOOLSET is empty, detect an initialized modern developer
+    # environment. MSVC requires a Visual Studio Developer Command Prompt.
     if ! $(JAM_TOOLSET)
     {
-        if $(BCCROOT)
+        if $(VSCMD_VER) || $(VCINSTALLDIR)
         {
-            JAM_TOOLSET  = BORLANDC ;
-            BORLANDC     = $(BCCROOT) ;
+            JAM_TOOLSET = MSVC ;
         }
-        else if $(MSVCNT) || $(MSVC)
+        else if $(MINGW_PREFIX) || $(MINGW_CHOST) || $(MSYSTEM)
         {
-            JAM_TOOLSET = VISUALC ;
-            VISUALC     = $(MSVCNT) ;
-        }
-        else if $(MINGW)
-        {
-            # MINGW is defined when trying to compile FT-Jam with
-            # classic Jam
-            #
             JAM_TOOLSET = MINGW ;
         }
         else
         {
-            Echo  "Jam cannot be run because you didn't indicate which compilation toolset" ;
-            Echo  "to use. To do so, define the JAM_TOOLSET environment variable with" ;
-            Echo  "one of the following values:" ;
-            Echo  ;
-            Echo  "   Value       Toolset Description" ;
-            Echo  ;
-            Echo  "   VISUALC      Microsoft Visual C++" ;
-            Echo  "   INTELC       Intel C/C++" ;
-            Echo  "   MINGW        MinGW (gcc)" ;
-            Echo  ;
-            Echo  "The corresponding compiler must be in your path" ;
-            Echo  ;
-            Echo  "  e.g.:  set JAM_TOOLSET=VISUALC" ;
-            Exit  ;
+            Echo  "Jam cannot determine a Windows compilation toolset." ;
+            Echo  "Use a Visual Studio Developer Command Prompt, a MinGW shell, or set" ;
+            Echo  "JAM_TOOLSET to MSVC or MINGW." ;
+            Exit ;
         }
     }
 
@@ -246,16 +223,8 @@ if $(NT)
 
     SUFLIBSHR ?= .dll ;
 
-    if $(JAM_TOOLSET) = VISUALC
+    if $(JAM_TOOLSET) = MSVC
     {
-        # Visual C++ 6.0 uses MSVCDIR
-
-        MSVCNT      ?= $(MSVCDIR) ;
-
-        # bury IA64 in the path for the SDK
-
-        local I ; if $(OSPLAT) = IA64 { I = ia64\\ ; } else { I = "" ; }
-
         AR          ?= lib ;
         AS          ?= masm386 ;
         CC          ?= cl /nologo ;
@@ -266,35 +235,8 @@ if $(NT)
         LINKFLAGS   ?= "" ;
         LINKLIBS    ?= ;
         OPTIM       ?= "" ;
-        STDHDRS     ?= $(VISUALC)\\include ;
-        UNDEFFLAG   ?= "/u _" ;
-    }
-    else if $(JAM_TOOLSET) = INTELC
-    {
-        Echo "Compiler is Intel C/C++" ;
-
-        if ! $(VISUALC)
-        {
-            Echo "As a special exception, when using the Intel C++ compiler, you need" ;
-            Echo "to define the VISUALC environment variable to indicate the location" ;
-            Echo "of your Visual C++ installation. Aborting.." ;
-            Exit ;
-        }
-
-        AR          ?= lib ;
-        AS          ?= masm386 ;
-        CC          ?= icl /nologo ;
-        CCFLAGS     ?= "" ;
-        C++         ?= $(CC) ;
-        C++FLAGS    ?= $(CCFLAGS) ;
-        LINK        ?= link /nologo ;
-        LINKFLAGS   ?= "" ;
-        LINKLIBS    ?= $(VISUALC)\\lib\\advapi32.lib
-               $(VISUALC)\\lib\\libc.lib
-               $(VISUALC)\\lib\\oldnames.lib
-               $(VISUALC)\\lib\\kernel32.lib ;
-        OPTIM       ?= "" ;
-        STDHDRS     ?= $(INTELC)\include $(VISUALC)\\include ;
+        # The Developer Command Prompt configures the standard include path.
+        STDHDRS     ?= "" ;
         UNDEFFLAG   ?= "/u _" ;
     }
     else if $(JAM_TOOLSET) = MINGW
@@ -315,16 +257,8 @@ if $(NT)
         SLASH            = / ;
 #       NOARSCAN        ?= true ;
     }
-    else
-    {
-#
-# XXX: We need better comments here !!
-#
-        Exit "On NT, set BCCROOT, MSVCNT, MINGW or MSVC to the root of the"
-             "Borland or Microsoft directories." ;
-    }
 
-    STDHRS ?= "" ;
+    STDHDRS ?= "" ;
 }
 else if $(VMS)
 {
@@ -378,6 +312,7 @@ else if $(UNIX)
         C++     ?= c++ ;
         MANDIR      ?= /usr/local/share/man ;
         DEFAULT_ARFLAGS     ?= csr ;
+        SUFLIBSHR  ?= .dylib ;
         PICFLAGS ?= -fPIC ;
 
     case QNX :
@@ -417,9 +352,9 @@ else if $(UNIX)
     YACCFILES   ?= y.tab ;
     YACCFLAGS   ?= -d ;
 
-    SUFOBJSHR   ?= .lo ;
-    SUFLIBSHR   ?= .la ;
-    PICFLAGS    ?= -fpic ;
+    SUFOBJSHR   ?= .o ;
+    SUFLIBSHR   ?= .so ;
+    PICFLAGS    ?= -fPIC ;
     STDHDRS     ?= /usr/include ;
 }
 
@@ -940,26 +875,6 @@ rule SharedLibrary
     SharedObjects            $(>) ;
 }
 
-if $(UNIX)
-{
-  # this rule is used to find the 'libtool' script in the current
-  # path, this is required when compiling shared objects on Unix
-  #
-  rule LibToolFind
-  {
-    if $(LIBTOOL) { return $(LIBTOOL) ; }
-
-    local  matches = [ Glob $(PATH) : libtool ] ;
-
-    if ! $(matches)
-    {
-      Exit "could not find 'libtool' program in current path. Aborting !" ;
-    }
-    LIBTOOL = $(matches[1]) ;
-
-    return $(LIBTOOL) ;
-  }
-}
 
 # /LibraryFromObjects library : objects ;
 #
@@ -1089,15 +1004,21 @@ rule SharedLibraryFromObjects
     #
     #if $(CRELIB) { CreLib $(_l) : $(_s[1]) ; }
 
-    # creating the library is so much fun on Unix :-)
     if $(UNIX)
     {
-        local  libtool = [ LibToolFind ] ;  # find the right libtool
+        # Link directly by default. Set LIBTOOL explicitly to retain the
+        # historic libtool command line when a project requires it.
+        if $(LIBTOOL)
+        {
+            AR on $(_l) = "$(LIBTOOL) --mode=link --tag=CC $(CC) -o" ;
+            Archive $(_l) : $(_s) ;
 
-        AR on $(_l) = "$(libtool) --mode=link --tag=CC $(CC) -o" ;
-        Archive $(_l) : $(_s) ;
-
-        if $(RANLIB) { Ranlib $(_l) ; }
+            if $(RANLIB) { Ranlib $(_l) ; }
+        }
+        else
+        {
+            SharedLink $(_l) : $(_s) ;
+        }
     }
     else if $(NT)
     {
@@ -1116,9 +1037,9 @@ rule SharedLibraryFromObjects
         MakeLocate $(_implib)        : $(LOCATE_TARGET) ;
         MakeLocate $(_implib:S=.exp) : $(LOCATE_TARGET) ;
 
-        if $(JAM_TOOLSET) in VISUALC BORLANDC
+        if $(JAM_TOOLSET) = MSVC
         {
-            SharedLink-$(JAM_TOOLSET) $(_l) : $(_s) : $(_implib) : $(_def) ;
+            SharedLink-MSVC $(_l) : $(_s) : $(_implib) : $(_def) ;
         }
 
         DllLink $(_l) $(_implib) : $(_s) ;
@@ -1137,37 +1058,14 @@ rule SharedLibraryFromObjects
 #
 #
 
-# This contains the Visual C++ specific rule used to build a DLL
-# and its import library
-#
-rule SharedLink-VISUALC
+# MSVC-specific DLL cleanup.
+rule SharedLink-MSVC
 {
   # get rid of the '.exp' file when cleaning
   #
   Clean  clean : $(3:S=.exp) ;
 }
 
-
-rule SharedLink-BORLANDC
-{
-  local  _deffile = $(4) ;
-  local  _implib  = $(3) ;
-
-  LINKFLAGS on $(<) += /x /Gn /Tpd ;
-  LINKLIBS on $(<) = $(LINKLIBS) $(ILINKLIBS) ;
-
-  # Generate import library with the IMPLIB tool !!
-  #
-  DllImplib $(_implib) : $(<) ;
-  Depends   $(_implib) : $(_deffile) $(<) ;
-  Depends   lib        : $(_implib) ;
-
-  DEFFILENAME on $(_implib) = $(_deffile) ;
-
-  # clean the TDS file, since the compiler refuses to not generate it !
-  MakeLocate $(<:S=.tds) : $(LOCATE_TARGET) ;
-  Clean  clean : $(<:S=.tds) ;
-}
 
 
 # /Link  image : objects ;
@@ -1228,10 +1126,9 @@ rule LinkSharedLibraries
     Depends $(_t) : $(>:S=$(_ext))  ;
     NEEDLIBS on $(_t) += $(>:S=$(_ext)) ;
 
-    if $(UNIX)
+    if $(UNIX) && $(LIBTOOL)
     {
-        libtool on $(_t) = [ LibToolFind ] ;
-        LINK on $(_t) = "$(libtool) --mode=link --tag=CC $(CC)" ;
+        LINK on $(_t) = "$(LIBTOOL) --mode=link --tag=CC $(CC)" ;
     }
 }
 
@@ -1279,13 +1176,6 @@ rule MainFromObjects
 
     Clean clean : $(_t) ;
 
-    # special case for stupid Borland C++, which always generates a
-    # .tds file for executables, even when no debug information is needed
-    #
-    if $(JAM_TOOLSET) = BORLANDC {
-      MakeLocate $(_t:S=.tds) : $(LOCATE_TARGET) ;
-      Clean  clean : $(_t:S=.tds) ;
-    }
 
     Link $(_t) : $(_s) ;
 }
@@ -1476,15 +1366,13 @@ rule SharedObjects
     #
     ObjectCcFlags $(<) : $(PICFLAGS) ;
 
-    # change the compiler invokation for all these objects
-    # to use Libtool on Unix systems. We explicitely disable the
-    # generation of static objects here
-    #
-    if $(UNIX)
+    # Projects that explicitly set LIBTOOL retain the legacy libtool
+    # compilation mode. Direct PIC compilation is used otherwise.
+    if $(UNIX) && $(LIBTOOL)
     {
-        libtool on $(<:S=$(SUFOBJ)) = [ LibToolFind ] ;
-        CC on $(<:S=$(SUFOBJ))      = "$(libtool) --mode=compile --tag=CC $(CC)" ;
-        C++ on $(<:S=$(SUFOBJ))      = "$(libtool) --mode=compile --tag=CXX $(CC)" ;
+        libtool on $(<:S=$(SUFOBJ)) = $(LIBTOOL) ;
+        CC on $(<:S=$(SUFOBJ)) = "$(libtool) --mode=compile --tag=CC $(CC)" ;
+        C++ on $(<:S=$(SUFOBJ)) = "$(libtool) --mode=compile --tag=CXX $(C++)" ;
     }
 }
 
@@ -2146,6 +2034,19 @@ actions Link bind NEEDLIBS
     $(LINK) $(LINKFLAGS) -o $(<) $(UNDEFS) $(>) $(NEEDLIBS) $(LINKLIBS)
 }
 
+actions SharedLink bind NEEDLIBS
+{
+    $(LINK) $(LINKFLAGS) -shared -o $(<) $(>) $(NEEDLIBS) $(LINKLIBS)
+}
+
+if $(UNIX) && $(OS) = DARWIN
+{
+    actions SharedLink bind NEEDLIBS
+    {
+        $(LINK) $(LINKFLAGS) -dynamiclib -o $(<) $(>) $(NEEDLIBS) $(LINKLIBS)
+    }
+}
+
 # builtin MkDir rule depends on this
 if $(NT)
 {
@@ -2247,7 +2148,7 @@ if $(UNIX)
 
 if $(NT)
 {
-    if $(JAM_TOOLSET) = VISUALC || $(JAM_TOOLSET) = INTELC
+    if $(JAM_TOOLSET) = MSVC
     {
         actions updated together piecemeal Archive
         {
@@ -2278,38 +2179,6 @@ if $(NT)
         actions DllLink bind NEEDLIBS DEFFILENAME IMPLIBNAME
         {
             $(LINK) $(LINKFLAGS) /DLL /DEF:$(DEFFILENAME) /IMPLIB:$(IMPLIBNAME) /out:$(<[1]) $(UNDEFS) $(>) $(NEEDLIBS) $(LINKLIBS)
-        }
-    }
-    else if $(JAM_TOOLSET) = BORLANDC
-    {
-        actions updated together piecemeal Archive
-        {
-            $(AR) $(<) -+$(>)
-        }
-
-        actions Link bind NEEDLIBS
-        {
-            $(LINK) -e$(<) $(LINKFLAGS) $(UNDEFS) -L$(LINKLIBS) $(NEEDLIBS) $(>)
-        }
-
-        actions DllLink bind NEEDLIBS DEFFILENAME
-        {
-            $(ILINK) $(LINKFLAGS) $(>) , $(<[1]) ,, $(LINKLIBS:E) $(NEEDLIBS:E) , $(DEFFILENAME)
-        }
-
-        actions DllImplib bind DEFFILENAME
-        {
-            $(IMPLIB) -a $(<) $(>) $(DEFFILENAME)
-        }
-
-        actions C++
-        {
-            $(C++) -c -o$(<) $(C++FLAGS) $(OPTIM) $(CCDEFS) $(CCHDRS) $(>)
-        }
-
-        actions Cc
-        {
-            $(CC) -c -o$(<) $(CCFLAGS) $(OPTIM) $(CCDEFS) $(CCHDRS) $(>)
         }
     }
     else if $(JAM_TOOLSET) = MINGW

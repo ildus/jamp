@@ -247,10 +247,6 @@ Flags handed to the assembler for As.
 
 The name of awk interpreter, used when copying a shell script for the Shell rule.
 
-`BCCROOT`
-
-Selects Borland compile and link actions on NT.
-
 `BINDIR`
 
 Not longer used. (I.e., used only for backward compatibility with the obsolete INSTALLBIN rule.)
@@ -410,17 +406,9 @@ The 'create directory' command used for the MkDir rule.
 
 The target-specific file mode (permissions) for targets of the Shell, Setuid, Link, and Install* rules. Used by the Chmod action; hence relevant to NT and VMS only.
 
-`MSVC`
+`JAM_TOOLSET`
 
-Selects Microsoft Visual C 16-bit compile & link actions on NT.
-
-`MSVCNT`
-
-Selects Microsoft Visual C NT 5.0 and earlier compile & link actions on NT.
-
-`MSVCDIR`
-
-Selects Microsoft Visual C NT 6.0 and later compile & link actions on NT. These are identical to versions 5.0 and earlier -- it just seems Microsoft changed the name of the variable.
+Selects the Windows toolchain. Supported values are `MSVC` and `MINGW`. When unset, Jambase detects an initialized Visual Studio Developer Command Prompt or a MinGW shell.
 
 `MV`
 
