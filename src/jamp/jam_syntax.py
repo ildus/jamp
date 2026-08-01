@@ -390,7 +390,7 @@ def p_func(p):
     """
     if len(p) == 3:
         p[0] = (Node.FUNC, p[1], p[2])
-    elif p[3] == 'return':
+    elif p[3] == "return":
         p[0] = (Node.RETURN_ON, p[2], p[4])
     else:
         p[0] = (Node.FUNC_ON, p[2], p[3], p[4])

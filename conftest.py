@@ -10,8 +10,8 @@ def pytest_configure(config):
 def pytest_unconfigure(config):
     import sys
 
-    if hasattr(sys, '_called_from_test'):
-        delattr(sys, '_called_from_test')
+    if hasattr(sys, "_called_from_test"):
+        delattr(sys, "_called_from_test")
 
 
 @pytest.fixture(autouse=True)

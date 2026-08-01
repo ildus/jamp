@@ -1,15 +1,12 @@
-import os
 import graphlib
-
-from typing import List, Union, Set
+import os
 from functools import cache
+from typing import Optional
 
+from jamp.headers import skip_include, target_find_headers
 from jamp.paths import Pathname, check_vms, check_windows
-from jamp.headers import target_find_headers, skip_include
 
-PATH_VARS = set(
-    ["PATH", "LD_LIBRARY_PATH", "PKG_CONFIG_PATH", "CLASSPATH", "PYTHONPATH"]
-)
+PATH_VARS = {"PATH", "LD_LIBRARY_PATH", "PKG_CONFIG_PATH", "CLASSPATH", "PYTHONPATH"}
 
 
 def is_subdir(path: str, potential_subdir: str):
@@ -19,7 +16,7 @@ def is_subdir(path: str, potential_subdir: str):
     return norm_subdir.startswith(norm_path)
 
 
-def remove_overlapping(dirs: List):
+def remove_overlapping(dirs: list):
     # Sort dirs by length in descending order
     dirs_sorted = sorted(dirs, key=len, reverse=True)
 
@@ -38,7 +35,7 @@ def chunks(lst, n):
 
     d, r = divmod(len(lst), n)
     for i in range(n):
-        si = (d + 1) * (i if i < r else r) + d * (0 if i < r else i - r)
+        si = (d + 1) * (min(r, i)) + d * (0 if i < r else i - r)
         yield lst[si : si + (d + 1 if i < r else d)]
 
 
@@ -89,8 +86,8 @@ class State:
         return sub_root
 
     def parse_and_compile(self, contents: str, filename=None):
-        from jamp.jam_syntax import parse
         from jamp.compile import compile
+        from jamp.jam_syntax import parse
 
         ast = parse(contents, filename=filename)
         cmds = compile(self, ast)
@@ -392,18 +389,15 @@ class Target:
         if self.is_dir:
             return True
 
-        if self.boundname and check_vms() and self.boundname.endswith("]"):
-            return True
-
-        return False
+        return bool(self.boundname and check_vms() and self.boundname.endswith("]"))
 
     def __init__(self, name: str, notfile=False):
         self.name: str = name
-        self.depends: Set[Target] = set()
-        self.includes: Set[Target] = set()
-        self.boundname: Union[None, str] = None
-        self.updating_actions: List[UpdatingAction] = []
-        self.build_step: tuple = None
+        self.depends: set[Target] = set()
+        self.includes: set[Target] = set()
+        self.boundname: None | str = None
+        self.updating_actions: list[UpdatingAction] = []
+        self.build_step: Optional(tuple, None) = None
 
         # Created my MkDir rule
         self.is_dir = False
@@ -715,7 +709,7 @@ class Target:
             dep.search_for_cycles(graph=graph, cpass=cpass)
 
         if top:
-            cycle: list[Target] = None
+            cycle = None
             try:
                 graph.prepare()
             except graphlib.CycleError as e:
@@ -756,10 +750,11 @@ class UpdatingAction:
     windows_line_limit = 7000
 
     def __init__(self, action: Actions, sources: list):
+        self.name = action.name
         self.action = action
         self.sources = sources
         self.base = None
-        self.next: List[UpdatingAction] = []
+        self.next: list[UpdatingAction] = []
         self.targets = []
         self.command = None
         self.restat = False
@@ -790,13 +785,13 @@ class UpdatingAction:
         return res
 
     def description(self):
-        names = set([self.action.name])
+        names = {self.action.name}
         for n in self.next:
             names.add(n.action.name)
 
         return " & ".join(names) + " $out"
 
-    def modify_vms_paths(self, state):
+    def modify_vms_paths(self, _state):
         """If path doesn't have directory, make it current"""
 
         if not self.bindparams:
@@ -840,6 +835,7 @@ class UpdatingAction:
             alone = False
 
         for src in chunks:
+            assert lines is not None
             for line in lines.split("\n"):
                 line = line.strip()
                 if not line:
@@ -891,23 +887,13 @@ class UpdatingAction:
 
             if line.endswith("\\"):
                 concat += line[:-1]
-            elif line.endswith("&&"):
-                concat += line + " "
-            elif line.endswith(";"):
-                concat += line + " "
-            elif line.endswith("("):
-                concat += line + " "
-            elif line.endswith("|"):
-                concat += line + " "
-            elif line.endswith("{"):
-                concat += line + " "
-            elif line == "then" or line.endswith(" then"):
-                concat += line + " "
-            elif line == "do" or line.endswith(" do"):
-                concat += line + " "
-            elif line == "else" or line.endswith(" else"):
-                concat += line + " "
-            elif len(quotes):
+            elif (
+                line.endswith(("&&", ";", "(", "|", "{", " then", " do", " else"))
+                or line == "then"
+                or line == "do"
+                or line == "else"
+                or len(quotes)
+            ):
                 concat += line + " "
             else:
                 concat += line
