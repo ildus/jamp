@@ -154,6 +154,9 @@ def ninja_build(state: State, output):
     from jamp.ninja_syntax import Writer
 
     writer = Writer(output, width=120)
+    if check_windows():
+        writer.variable("ninja_required_version", "1.14")
+        writer.newline()
 
     counter = 0
     commands_cache = {}
