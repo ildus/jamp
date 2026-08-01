@@ -410,7 +410,6 @@ A number of Jam built-in variables can be used to identify runtime platform:
 | OSPLAT   | Underlying architecture, when applicable |
 | MAC      | true on MAC platform |
 | NT       | true on NT platform |
-| OS2      | true on OS2 platform |
 | UNIX     | true on Unix platforms |
 | VMS      | true on VMS platform |
 

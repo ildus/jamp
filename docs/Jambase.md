@@ -490,10 +490,6 @@ The suffix for object files. Used by the Objects and related rules.
 
 The flag prefixed to each symbol for the Undefines rule (i.e., the compiler flag for undefined symbols).
 
-`WATCOM`
-
-Selects Watcom compile and link actions on OS2.
-
 `YACC`
 
 The yacc(1) command.

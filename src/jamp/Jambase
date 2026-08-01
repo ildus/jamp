@@ -34,7 +34,6 @@
 # 02/14/95 (seiwald) - MkDir and entourage.
 # 04/30/95 (seiwald) - Use install -c flag so that it copies, not moves.
 # 07/10/95 (taylor) - Support for Microsoft C++.
-# 11/21/96 (peterk) - Support for BeOS
 # 07/19/99 (sickel) - Support for Mac OS X Server (and maybe client)
 # 02/18/00 (belmonte)- Support for Cygwin.
 # 18/11/24 (ikurbang)- Fix PkgInstallHeader, quote "include".
@@ -330,9 +329,6 @@ else if $(UNIX)
         RANLIB      ?= "" ;
         AR      ?= "/usr/ccs/bin/ar ru" ;
 
-        case UNICOS :
-        NOARSCAN    ?= true ;
-        OPTIM       ?= -O0 ;
     }
 
     # UNIX defaults
@@ -848,11 +844,11 @@ rule Library
 # $(SUFLIBSHR) suffix is used
 #
 # _def_ is the name of the corresponding definition file used to generate
-# the library on Windows and OS/2 (ignored otherwise). If undefined, it
+# the library on Windows (ignored otherwise). If undefined, it
 # will default to _library_ with the .def suffix
 #
 # _import_ is the name of the corresponding import library for Windows
-# and OS/2 platforms (ignored otherwise). If undefined, it will default
+# platforms (ignored otherwise). If undefined, it will default
 # to _library_ with the .dll.lib suffix.
 #
 rule SharedLibrary
@@ -1104,7 +1100,7 @@ rule LinkSharedLibraries
 
     if $(NT)
     {
-      # on NT or OS/2, we need to link agains the import library,
+      # On Windows, link against the import library,
       # not the DLL itself !!
       #
       _ext = $(SUFLIBSHR)$(SUFLIB) ;
