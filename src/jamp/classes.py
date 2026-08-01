@@ -1,7 +1,6 @@
 import graphlib
 import os
-from functools import cache
-from typing import Optional
+from typing import ClassVar, Optional
 
 from jamp.headers import skip_include, target_find_headers
 from jamp.paths import Pathname, check_vms, check_windows
@@ -74,7 +73,6 @@ class State:
         # skipped from scanning headers, just a cache
         self.scan_skipped = set()
 
-    @cache
     def sub_root(self):
         sub_root = self.vars.get("SUBDIR_ROOT")
         if not sub_root:
@@ -134,7 +132,7 @@ class State:
 
 
 class Vars:
-    delete_vars = ["LS_COLORS", "GITHUB_TOKEN"]
+    delete_vars: ClassVar[list[str]] = ["LS_COLORS", "GITHUB_TOKEN"]
 
     def __init__(self, debug_env=False):
         self.debug_env = debug_env
@@ -196,13 +194,13 @@ class Vars:
 
     def set(self, name: str, value: str | None):
         if not isinstance(name, str):
-            raise Exception(f"vars_set: expected str value for key name: got {name}")
+            raise TypeError(f"vars_set: expected str value for key name: got {name}")
 
         if not isinstance(value, list):
-            raise Exception("vars_set: expected list for value")
+            raise TypeError("vars_set: expected list for value")
 
         if isinstance(value, list) and len(value) and isinstance(value[0], list):
-            raise Exception(f"can't store LOL as value for {name}: got {value}")
+            raise ValueError(f"can't store LOL as value for {name}: got {value}")
 
         if name in self.scope:
             # something local
@@ -219,7 +217,7 @@ class Vars:
 
     def get_scope(self, name: str):
         if not isinstance(name, str):
-            raise Exception(
+            raise TypeError(
                 f"vars_get_scope: expected str value for key name: got {name}"
             )
 
@@ -265,7 +263,7 @@ class Vars:
 
     def get(self, name: str, on_target=None):
         if not isinstance(name, str):
-            raise Exception(f"vars_get: expected str value for key name: got {name}")
+            raise TypeError(f"vars_get: expected str value for key name: got {name}")
 
         if on_target:
             self.current_context.append(on_target.vars)
@@ -368,7 +366,7 @@ class UnderTarget:
 
 
 class Target:
-    existing_paths = {}
+    existing_paths: ClassVar[dict] = {}
 
     @classmethod
     def bind(cls, state: State, name: str, notfile=False):
@@ -535,7 +533,7 @@ class Target:
                         order_only |= inner_deps_order
                     elif len(inner_deps_impl) or len(inner_deps_order):
                         t.collection = (
-                            set((depval,)) | inner_deps_impl,
+                            {depval} | inner_deps_impl,
                             set(inner_deps_order),
                         )
                         depval = t.collection_name()

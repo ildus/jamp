@@ -57,7 +57,7 @@ class LexerError(Exception):
     pass
 
 
-class LexerToken(object):
+class LexerToken:
     def __repr__(self):
         return f"LexToken({self.type},{self.value!r},{self.lineno},{self.lexpos})"
 
@@ -136,7 +136,7 @@ class Lexer:
         return self.next_token(tok)
 
     def is_space(self, c):
-        return c in set([" ", "\t", EOL, "\f", "\r"])
+        return c in {" ", "\t", EOL, "\f", "\r"}
 
     def next_token(self, tok=None):
         if tok is None:
@@ -245,11 +245,10 @@ class Lexer:
             if res in keywords:
                 tok.type = keywords[res]
 
-            if tok.type == "INCLUDE":
-                if not (
-                    self.prevtoken is None
-                    or self.prevtoken.type in ("SEMICOLON", "LBRACE", "RBRACE")
-                ):
-                    tok.type = "ARG"
+            if tok.type == "INCLUDE" and not (
+                self.prevtoken is None
+                or self.prevtoken.type in ("SEMICOLON", "LBRACE", "RBRACE")
+            ):
+                tok.type = "ARG"
 
         return self.next_token(tok)

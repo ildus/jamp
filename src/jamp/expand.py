@@ -1,11 +1,10 @@
-from jamp.paths import Pathname
-from jamp.classes import Vars, State, Exec
-from jamp.jam_syntax import Arg, Node
-from dataclasses import dataclass
-from typing import Union
-
 import itertools
 import re
+from dataclasses import dataclass
+
+from jamp.classes import Exec, State, Vars
+from jamp.jam_syntax import Arg, Node
+from jamp.paths import Pathname
 
 MAGIC_COLON = "\x01"
 MAGIC_LEFT = "\x02"
@@ -31,32 +30,29 @@ def iter_var(var, skip_empty=True):
     if isinstance(var, str):
         yield var
     elif isinstance(var, list):
-        for item in var:
-            yield item
+        yield from var
     else:
-        raise Exception(f"unexpected var for iteration: {var}")
+        raise TypeError(f"unexpected var for iteration: {var}")
 
 
 def validate(var):
     if not isinstance(var, list):
-        raise Exception(f"validation: expected list, got: {var}")
-    if len(var) > 0:
-        if not isinstance(var[0], str):
-            raise Exception(f"validation: expected str on second level, got: {var[0]}")
+        raise TypeError(f"validation: expected list, got: {var}")
+    if len(var) > 0 and not isinstance(var[0], str):
+        raise ValueError(f"validation: expected str on second level, got: {var[0]}")
 
 
 def validate_lol(var):
     if not isinstance(var, list):
-        raise Exception(f"LOL validation: expected list, got: {var}")
-    if len(var) > 0:
-        if not isinstance(var[0], list):
-            raise Exception(
-                f"LOL validation: expected list on second level, got: {var[0]}"
-            )
+        raise TypeError(f"LOL validation: expected list, got: {var}")
+    if len(var) > 0 and not isinstance(var[0], list):
+        raise ValueError(
+            f"LOL validation: expected list on second level, got: {var[0]}"
+        )
 
 
 def var_expand(
-    var: str, lol: list | None, state_vars: Union[Vars, dict], keep_max=True
+    var: str, lol: list | None, state_vars: Vars | dict, keep_max=True
 ):
     """
     var_expand() - variable-expand input string into list of strings
@@ -113,20 +109,20 @@ def var_expand(
     vals_out = []
 
     # Now produce the result chain
-    for var in variables:
-        varname = var
+    for variable in variables:
+        varname = variable
 
         # Look for a : modifier in the variable name
-        colon_idx = var.find(MAGIC_COLON)
+        colon_idx = variable.find(MAGIC_COLON)
         edits: Edits = None
         if colon_idx > 0:
-            varname = var[:colon_idx]
-            edits = var_edit_parse(var[colon_idx + 1 :])
+            varname = variable[:colon_idx]
+            edits = var_edit_parse(variable[colon_idx + 1 :])
 
         # Look for [x-y] subscripting
         # sub1 is x (0 default)
         # sub2 is length (-1 means forever)
-        left_idx = var.find(MAGIC_LEFT)
+        left_idx = variable.find(MAGIC_LEFT)
         sub1 = 0
         sub2 = 0
 
@@ -292,9 +288,7 @@ def var_edit_parse(colon_part: str):
                 edits.parent = True
                 edits.filemods = True
             case "@":
-                import pdb
-
-                pdb.set_trace()
+                pass
             case "E":
                 edits.empty, skip = strval(colon_part[i + 1 :])
             case "J":
@@ -368,7 +362,7 @@ def var_edit_quote(string):
 
 
 def var_string(
-    var: str, lol: list, state_vars: Union[Vars, dict], targets_cnt: int, alone=False
+    var: str, lol: list, state_vars: Vars | dict, targets_cnt: int, alone=False
 ):
     res = ""
 
@@ -404,7 +398,7 @@ def var_string(
     return res
 
 
-def expand(state: State, arg: Union[Arg, tuple, str], skip_empty=True):
+def expand(state: State, arg: Arg | tuple | str, skip_empty=True):
     """Make list of strings from some type of an argument"""
 
     if arg is None or (skip_empty and arg == ""):
@@ -422,7 +416,7 @@ def expand(state: State, arg: Union[Arg, tuple, str], skip_empty=True):
         elif isinstance(execval, Result):
             res = execval.val
         else:
-            raise Exception(f"expected result, got {execval}")
+            raise TypeError(f"expected result, got {execval}")
     elif isinstance(arg, Arg):
         res = expand(state, arg.value, skip_empty=skip_empty)
     elif isinstance(arg, list):
@@ -433,7 +427,7 @@ def expand(state: State, arg: Union[Arg, tuple, str], skip_empty=True):
                 res.append(v)
     else:
         print(type(arg))
-        raise Exception(f"could not expand arg: {arg}")
+        raise TypeError(f"could not expand arg: {arg}")
 
     validate(res)
     return res
@@ -449,7 +443,7 @@ def expand_lol(state: State, arg: tuple):
     elif isinstance(arg, list):
         res = [[expand(state, item) for item in arg]]
     else:
-        raise Exception(f"could not expand LOL: {arg}")
+        raise TypeError(f"could not expand LOL: {arg}")
 
     validate_lol(res)
     return res

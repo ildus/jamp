@@ -1,10 +1,10 @@
 import os
 
-from jamp.jam_syntax import parse
+from jamp.classes import State
 from jamp.compile import compile
 from jamp.executors import run
-from jamp.classes import State
 from jamp.jam_builtins import Builtins
+from jamp.jam_syntax import parse
 
 
 def expect_output(expected):

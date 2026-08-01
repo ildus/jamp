@@ -1,13 +1,12 @@
 import argparse
 import os
-import sys
 import subprocess as sp
-
+import sys
 from collections import OrderedDict
 
 from jamp import executors, headers, jam_builtins
 from jamp.classes import State, Target, UpdatingAction
-from jamp.paths import check_vms, escape_path, add_paths, check_windows
+from jamp.paths import add_paths, check_vms, check_windows, escape_path
 
 windows_common_cmds = ["cl", "cl.exe", "cp", "copy"]
 windows_oneliners = [" & ", " && ", " | ", " || ", "^T"]
@@ -103,7 +102,7 @@ def main_app(args):
 
     if not os.path.exists(jamfile):
         print("Jamfile not found")
-        exit(1)
+        sys.exit(1)
 
     with open(jambase) as f:
         jambase_contents = f.read()
@@ -146,7 +145,7 @@ def main_app(args):
         ninja_build(state, f)
 
     if args.build:
-        sp.run(["ninja"])
+        sp.run(["ninja"], check=False)
 
 
 def ninja_build(state: State, output):
@@ -264,8 +263,8 @@ def ninja_build(state: State, output):
 
     for target in state.targets.values():
         implicit, order_only = target.get_dependency_list(state)
-        implicit = set(escape_path(i) for i in implicit)
-        order_only = set(escape_path(i) for i in order_only)
+        implicit = {escape_path(i) for i in implicit}
+        order_only = {escape_path(i) for i in order_only}
 
         if target.notfile:
             kwargs = {}
@@ -343,7 +342,7 @@ def ninja_build(state: State, output):
             variables = {"step": stepnum}
 
         writer.build(
-            (escape_path(i) for i in outputs.keys()),
+            (escape_path(i) for i in outputs),
             upd_action.name,
             inputs.keys(),
             implicit=res_implicit,

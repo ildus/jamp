@@ -1,6 +1,6 @@
-from jamp.jam_syntax import Node, Arg
-from jamp.classes import Rule, Exec, Actions, State
 from jamp import executors
+from jamp.classes import Actions, Exec, Rule, State
+from jamp.jam_syntax import Arg, Node
 
 
 class CompilerError(Exception):

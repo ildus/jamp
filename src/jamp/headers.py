@@ -1,10 +1,8 @@
-import re
 import os
-import subprocess as sp
 import pickle
-
+import re
+import subprocess as sp
 from functools import cache
-from typing import Optional
 
 headers_cache = None
 headers_cache_loaded = None
@@ -40,9 +38,10 @@ def save_headers_cache():
         try:
             with open(FN_CACHE, "wb") as f:
                 pickle.dump(headers_cache, f)
-        except Exception as e:
+        except (OSError, pickle.PicklingError) as e:
             print(f"jamp: could not save to headers cache to {FN_CACHE}: {e}")
-            os.unlink(FN_CACHE)
+            if os.path.exists(FN_CACHE):
+                os.unlink(FN_CACHE)
 
 
 def get_cached_headers(state, fn: str, timestamp: float):
@@ -63,7 +62,7 @@ def get_cached_headers(state, fn: str, timestamp: float):
             return data[1]
 
 
-def target_find_headers(state, target, db: Optional[dict] = None) -> bool:
+def target_find_headers(state, target, db: dict | None = None) -> bool:
     from jamp.executors import exec_one_rule
 
     before_incs = len(target.includes)

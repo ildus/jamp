@@ -11,9 +11,9 @@
 #
 
 import platform
-from pathlib import PurePath
 from enum import Enum
 from functools import cache
+from pathlib import PurePath
 
 
 @cache

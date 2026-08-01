@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 import sys
-
-from jamp.jam_lexer import Lexer, SCAN_NORMAL, keywords
-from jamp.yacc import yacc
 from enum import Enum
+
+from jamp.jam_lexer import SCAN_NORMAL, Lexer, keywords
+from jamp.yacc import yacc
 
 use_colors = False
 
@@ -355,7 +355,7 @@ def p_listp(p):
             p[0] = p[1]
 
 
-class Arg(object):
+class Arg:
     def __init__(self, val):
         self.value = val
 
@@ -456,7 +456,7 @@ def p_error(p):
         print("Syntax error")
 
 
-def parse(text: str, filename: str = None):
+def parse(text: str, filename: str | None = None):
     parser = yacc()
     lexer = Lexer(filename=filename)
     lexer.input(text)

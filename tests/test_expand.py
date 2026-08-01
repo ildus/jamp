@@ -1,6 +1,7 @@
 from os import sep as S
 
-from jamp.expand import var_expand, var_edit_parse, MAGIC_COLON as MC
+from jamp.expand import MAGIC_COLON as MC
+from jamp.expand import var_edit_parse, var_expand
 from jamp.paths import Pathname
 
 

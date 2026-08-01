@@ -77,9 +77,7 @@ def match(pat: str, string: str, ignore_case: bool = False):
 
                 j += 1
             case _:
-                if ignore_case and string[j].lower() != pat[i].lower():
-                    return 1
-                elif j == len(string) or string[j] != pat[i]:
+                if ignore_case and string[j].lower() != pat[i].lower() or j == len(string) or string[j] != pat[i]:
                     return 1
 
                 j += 1

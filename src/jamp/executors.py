@@ -1,10 +1,10 @@
 import os
+import sys
 
-from jamp.jam_builtins import Builtins, output, trace, traceinfo
+from jamp.classes import Exec, Rule, State, Target, UpdatingAction
 from jamp.expand import expand, expand_lol, flatten, iter_var, lol_get
+from jamp.jam_builtins import Builtins, output, trace, traceinfo
 from jamp.jam_syntax import Arg, Node
-from jamp.classes import Rule, State, Exec, Target, UpdatingAction
-from typing import Optional, Union
 from jamp.pattern import match
 
 builtins = Builtins()
@@ -20,7 +20,7 @@ class Result:
         self.val = val
 
 
-def run(state: State, cmds: Union[list, Exec]) -> Optional[int]:
+def run(state: State, cmds: list | Exec) -> int | None:
     """Starting point of tasks execution"""
 
     res = None
@@ -38,10 +38,6 @@ def run(state: State, cmds: Union[list, Exec]) -> Optional[int]:
                 # probably we need to break the execution
                 if ret in (FLOW_BREAK, FLOW_CONTINUE):
                     return ret
-                elif ret == FLOW_DEBUG:
-                    import pdb
-
-                    pdb.set_trace()
 
                 if isinstance(ret, Result):
                     res = ret
@@ -87,10 +83,7 @@ class ExecutionError(Exception):
 
 
 def check_empty_val(assign_list):
-    if assign_list and isinstance(assign_list[0], Arg) and assign_list[0].value == "":
-        return True
-
-    return False
+    return bool(assign_list and isinstance(assign_list[0], Arg) and assign_list[0].value == "")
 
 
 @trace("assign")
@@ -178,7 +171,7 @@ def exec_return(state: State, retval) -> Result:
 
 
 @trace("local assign")
-def exec_local_assign(state: State, names: Union[Arg, list], assign_list):
+def exec_local_assign(state: State, names: Arg | list, assign_list):
     names = expand(state, names)
     value = expand(state, assign_list, skip_empty=False)
 
@@ -278,18 +271,19 @@ def exec_one_rule(state: State, name: str, params: list):
 
     rule: Rule = state.rules.get(name)
     if rule is None:
-        if state.current_rule is not None:
-            # look like an actions call inside some rule
-            if name in state.actions and name != state.current_rule.name:
-                # create an updating action for targets
-                exec_rule_action(state, state.current_rule, name, params)
-                return
+        if (
+            state.current_rule is not None
+            and name in state.actions
+            and name != state.current_rule.name
+        ):
+            # create an updating action for targets
+            exec_rule_action(state, state.current_rule, name, params)
+            return
 
-        if name != "Clean":
+        if name != "Clean" and name not in complained_rules:
             # we just ignore clean rules, ninja will do cleaning part
-            if name not in complained_rules:
-                output(f"jamp: unknown rule {name}")
-                complained_rules.add(name)
+            output(f"jamp: unknown rule {name}")
+            complained_rules.add(name)
 
         return
 
@@ -319,8 +313,8 @@ def exec_rule(state: State, name: Arg, args):
     params = expand_lol(state, args)
 
     res = []
-    for name in names:
-        rule_res: Optional[Result] = exec_one_rule(state, name, params)
+    for rule_name in names:
+        rule_res: Result | None = exec_one_rule(state, rule_name, params)
         if isinstance(rule_res, Result):
             res += rule_res.val
         elif rule_res == FLOW_DEBUG:
@@ -350,7 +344,7 @@ def exec_include(state: State, location):
 
         if not t.boundname or not os.path.exists(t.boundname):
             print(f"Include failed on file: {t.boundname}")
-            exit(1)
+            sys.exit(1)
         else:
             jamfiles_target = state.targets.get("jamfiles")
             if jamfiles_target:

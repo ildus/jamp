@@ -61,10 +61,11 @@
 # own risk!
 # ----------------------------------------------------------------------------
 
-import re
-import types
-import sys
 import inspect
+import re
+import sys
+import types
+from pathlib import Path
 
 # -----------------------------------------------------------------------------
 #                     === User configurable parameters ===
@@ -88,7 +89,7 @@ MAXINT = sys.maxsize
 # it into PLY.
 
 
-class PlyLogger(object):
+class PlyLogger:
     def __init__(self, f):
         self.f = f
 
@@ -107,7 +108,7 @@ class PlyLogger(object):
 
 
 # Null logger is used when no output is generated. Does nothing.
-class NullLogger(object):
+class NullLogger:
     def __getattribute__(self, name):
         return self
 
@@ -127,7 +128,7 @@ def format_result(r):
         repr_str = repr(repr_str)
     if len(repr_str) > resultlimit:
         repr_str = repr_str[:resultlimit] + " ..."
-    result = "<%s @ 0x%x> (%s)" % (type(r).__name__, id(r), repr_str)
+    result = f"<{type(r).__name__} @ 0x{id(r):x}> ({repr_str})"
     return result
 
 
@@ -139,7 +140,7 @@ def format_stack_entry(r):
     if len(repr_str) < 16:
         return repr_str
     else:
-        return "<%s @ 0x%x>" % (type(r).__name__, id(r))
+        return f"<{type(r).__name__} @ 0x{id(r):x}>"
 
 
 # -----------------------------------------------------------------------------
@@ -362,8 +363,7 @@ class LRParser:
                 debug.debug(
                     "Stack  : %s",
                     (
-                        "%s . %s"
-                        % (" ".join([xx.type for xx in symstack][1:]), str(lookahead))
+                        "{} . {}".format(" ".join([xx.type for xx in symstack][1:]), str(lookahead))
                     ).lstrip(),
                 )
 
@@ -519,8 +519,7 @@ class LRParser:
                     debug.error(
                         "Error  : %s",
                         (
-                            "%s . %s"
-                            % (
+                            "{} . {}".format(
                                 " ".join([xx.type for xx in symstack][1:]),
                                 str(lookahead),
                             )
@@ -563,12 +562,11 @@ class LRParser:
                                 lineno = 0
                             if lineno:
                                 sys.stderr.write(
-                                    "yacc: Syntax error at line %d, token=%s\n"
-                                    % (lineno, errtoken.type)
+                                    f"yacc: Syntax error at line {lineno}, token={errtoken.type}\n"
                                 )
                             else:
                                 sys.stderr.write(
-                                    "yacc: Syntax error, token=%s" % errtoken.type
+                                    f"yacc: Syntax error, token={errtoken.type}"
                                 )
                         else:
                             sys.stderr.write("yacc: Parse error in input. EOF\n")
@@ -668,7 +666,7 @@ _is_identifier = re.compile(r"^[a-zA-Z0-9_-]+$")
 # -----------------------------------------------------------------------------
 
 
-class Production(object):
+class Production:
     reduced = 0
 
     def __init__(
@@ -699,9 +697,9 @@ class Production(object):
 
         # Create a string representation
         if self.prod:
-            self.str = "%s -> %s" % (self.name, " ".join(self.prod))
+            self.str = "{} -> {}".format(self.name, " ".join(self.prod))
         else:
-            self.str = "%s -> <empty>" % self.name
+            self.str = f"{self.name} -> <empty>"
 
     def __str__(self):
         return self.str
@@ -765,7 +763,7 @@ class Production(object):
 # -----------------------------------------------------------------------------
 
 
-class LRItem(object):
+class LRItem:
     def __init__(self, p, n):
         self.name = p.name
         self.prod = list(p.prod)
@@ -779,9 +777,9 @@ class LRItem(object):
 
     def __str__(self):
         if self.prod:
-            s = "%s -> %s" % (self.name, " ".join(self.prod))
+            s = "{} -> {}".format(self.name, " ".join(self.prod))
         else:
-            s = "%s -> <empty>" % self.name
+            s = f"{self.name} -> <empty>"
         return s
 
     def __repr__(self):
@@ -815,7 +813,7 @@ class GrammarError(YaccError):
     pass
 
 
-class Grammar(object):
+class Grammar:
     def __init__(self, terminals):
         self.Productions = [None]  # A list of all of the productions.  The first
         # entry is always reserved for the purpose of
@@ -872,7 +870,7 @@ class Grammar(object):
             "Must call set_precedence() before add_production()"
         )
         if term in self.Precedence:
-            raise GrammarError("Precedence already specified for terminal %r" % term)
+            raise GrammarError(f"Precedence already specified for terminal {term!r}")
         if assoc not in ["left", "right", "nonassoc"]:
             raise GrammarError(
                 "Associativity must be one of 'left','right', or 'nonassoc'"
@@ -900,16 +898,14 @@ class Grammar(object):
 
         if prodname in self.Terminals:
             raise GrammarError(
-                "%s:%d: Illegal rule name %r. Already defined as a token"
-                % (file, line, prodname)
+                f"{file}:{line}: Illegal rule name {prodname!r}. Already defined as a token"
             )
         if prodname == "error":
             raise GrammarError(
-                "%s:%d: Illegal rule name %r. error is a reserved word"
-                % (file, line, prodname)
+                f"{file}:{line}: Illegal rule name {prodname!r}. error is a reserved word"
             )
         if not _is_identifier.match(prodname):
-            raise GrammarError("%s:%d: Illegal rule name %r" % (file, line, prodname))
+            raise GrammarError(f"{file}:{line}: Illegal rule name {prodname!r}")
 
         # Look for literal tokens
         for n, s in enumerate(syms):
@@ -918,8 +914,7 @@ class Grammar(object):
                     c = eval(s)
                     if len(c) > 1:
                         raise GrammarError(
-                            "%s:%d: Literal token %s in rule %r may only be a single character"
-                            % (file, line, s, prodname)
+                            f"{file}:{line}: Literal token {s} in rule {prodname!r} may only be a single character"
                         )
                     if c not in self.Terminals:
                         self.Terminals[c] = []
@@ -929,26 +924,24 @@ class Grammar(object):
                     pass
             if not _is_identifier.match(s) and s != "%prec":
                 raise GrammarError(
-                    "%s:%d: Illegal name %r in rule %r" % (file, line, s, prodname)
+                    f"{file}:{line}: Illegal name {s!r} in rule {prodname!r}"
                 )
 
         # Determine the precedence level
         if "%prec" in syms:
             if syms[-1] == "%prec":
                 raise GrammarError(
-                    "%s:%d: Syntax error. Nothing follows %%prec" % (file, line)
+                    f"{file}:{line}: Syntax error. Nothing follows %prec"
                 )
             if syms[-2] != "%prec":
                 raise GrammarError(
-                    "%s:%d: Syntax error. %%prec can only appear at the end of a grammar rule"
-                    % (file, line)
+                    f"{file}:{line}: Syntax error. %prec can only appear at the end of a grammar rule"
                 )
             precname = syms[-1]
             prodprec = self.Precedence.get(precname)
             if not prodprec:
                 raise GrammarError(
-                    "%s:%d: Nothing known about the precedence of %r"
-                    % (file, line, precname)
+                    f"{file}:{line}: Nothing known about the precedence of {precname!r}"
                 )
             else:
                 self.UsedPrecedence.add(precname)
@@ -959,12 +952,11 @@ class Grammar(object):
             prodprec = self.Precedence.get(precname, ("right", 0))
 
         # See if the rule is already in the rulemap
-        map = "%s -> %s" % (prodname, syms)
+        map = f"{prodname} -> {syms}"
         if map in self.Prodmap:
             m = self.Prodmap[map]
             raise GrammarError(
-                "%s:%d: Duplicate rule %s. " % (file, line, m)
-                + "Previous definition at %s:%d" % (m.file, m.line)
+                f"{file}:{line}: Duplicate rule {m}. Previous definition at {m.file}:{m.line}"
             )
 
         # From this point on, everything is valid.  Create a new Production instance
@@ -1003,7 +995,7 @@ class Grammar(object):
         if not start:
             start = self.Productions[1].name
         if start not in self.Nonterminals:
-            raise GrammarError("start symbol %s undefined" % start)
+            raise GrammarError(f"start symbol {start} undefined")
         self.Productions[0] = Production(0, "S'", [start])
         self.Nonterminals[start].append(0)
         self.Start = start
@@ -1501,10 +1493,8 @@ class LRTable:
     # Compute the LR(0) sets of item function
     def lr0_items(self):
         C = [self.lr0_closure([self.grammar.Productions[0].lr_next])]
-        i = 0
-        for I in C:
+        for i, I in enumerate(C):
             self.lr0_cidhash[id(I)] = i
-            i += 1
 
         # Loop over the items in C and each grammar symbols
         i = 0
@@ -1590,9 +1580,8 @@ class LRTable:
             for p in state:
                 if p.lr_index < p.len - 1:
                     t = (stateno, p.prod[p.lr_index + 1])
-                    if t[1] in self.grammar.Nonterminals:
-                        if t not in trans:
-                            trans.append(t)
+                    if t[1] in self.grammar.Nonterminals and t not in trans:
+                        trans.append(t)
         return trans
 
     # -----------------------------------------------------------------------------
@@ -1612,9 +1601,8 @@ class LRTable:
         for p in g:
             if p.lr_index < p.len - 1:
                 a = p.prod[p.lr_index + 1]
-                if a in self.grammar.Terminals:
-                    if a not in terms:
-                        terms.append(a)
+                if a in self.grammar.Terminals and a not in terms:
+                    terms.append(a)
 
         # This extra bit is to handle the start state
         if state == 0 and N == self.grammar.Productions[0].prod[0]:
@@ -1849,8 +1837,7 @@ class LRTable:
         self.add_lalr_lookaheads(C)
 
         # Build the parser table, state by state
-        st = 0
-        for I in C:
+        for st, I in enumerate(C):
             # Loop over each production in I
             actlist = []  # List of actions
             st_action = {}
@@ -1874,7 +1861,7 @@ class LRTable:
                         laheads = p.lookaheads[st]
                         for a in laheads:
                             actlist.append(
-                                (a, p, "reduce using rule %d (%s)" % (p.number, p))
+                                (a, p, f"reduce using rule {p.number} ({p})")
                             )
                             r = st_action.get(a)
                             if r is not None:
@@ -1885,7 +1872,7 @@ class LRTable:
                                     # some precedence rules here.
 
                                     # Shift precedence comes from the token
-                                    sprec, slevel = Precedence.get(a, ("right", 0))
+                                    _sprec, slevel = Precedence.get(a, ("right", 0))
 
                                     # Reduce precedence comes from rule being reduced (p)
                                     rprec, rlevel = Productions[p.number].prec
@@ -1934,7 +1921,7 @@ class LRTable:
                                         st_actionp[a],
                                     )
                                 else:
-                                    raise LALRError("Unknown conflict in state %d" % st)
+                                    raise LALRError(f"Unknown conflict in state {st}")
                             else:
                                 st_action[a] = -p.number
                                 st_actionp[a] = p
@@ -1947,14 +1934,14 @@ class LRTable:
                         j = self.lr0_cidhash.get(id(g), -1)
                         if j >= 0:
                             # We are in a shift state
-                            actlist.append((a, p, "shift and go to state %d" % j))
+                            actlist.append((a, p, f"shift and go to state {j}"))
                             r = st_action.get(a)
                             if r is not None:
                                 # Whoa have a shift/reduce or shift/shift conflict
                                 if r > 0:
                                     if r != j:
                                         raise LALRError(
-                                            "Shift/shift conflict in state %d" % st
+                                            f"Shift/shift conflict in state {st}"
                                         )
                                 elif r < 0:
                                     # Do a precedence check.
@@ -1963,7 +1950,7 @@ class LRTable:
                                     #   -  otherwise we shift
 
                                     # Shift precedence comes from the token
-                                    sprec, slevel = Precedence.get(a, ("right", 0))
+                                    _sprec, slevel = Precedence.get(a, ("right", 0))
 
                                     # Reduce precedence comes from the rule that could have been reduced
                                     rprec, rlevel = Productions[
@@ -1995,7 +1982,7 @@ class LRTable:
                                             self.sr_conflicts.append((st, a, "reduce"))
 
                                 else:
-                                    raise LALRError("Unknown conflict in state %d" % st)
+                                    raise LALRError(f"Unknown conflict in state {st}")
                             else:
                                 st_action[a] = j
                                 st_actionp[a] = p
@@ -2003,20 +1990,21 @@ class LRTable:
             # Print the actions associated with each terminal
             _actprint = {}
             for a, p, m in actlist:
-                if a in st_action:
-                    if p is st_actionp[a]:
-                        log.info("    %-15s %s", a, m)
-                        _actprint[(a, m)] = 1
+                if a in st_action and p is st_actionp[a]:
+                    log.info("    %-15s %s", a, m)
+                    _actprint[(a, m)] = 1
             log.info("")
             # Print the actions that were not used. (debugging)
             not_used = 0
             for a, p, m in actlist:
-                if a in st_action:
-                    if p is not st_actionp[a]:
-                        if not (a, m) in _actprint:
-                            log.debug("  ! %-15s [ %s ]", a, m)
-                            not_used = 1
-                            _actprint[(a, m)] = 1
+                if (
+                    a in st_action
+                    and p is not st_actionp[a]
+                    and (a, m) not in _actprint
+                ):
+                    log.debug("  ! %-15s [ %s ]", a, m)
+                    not_used = 1
+                    _actprint[(a, m)] = 1
             if not_used:
                 log.debug("")
 
@@ -2037,7 +2025,6 @@ class LRTable:
             action[st] = st_action
             actionp[st] = st_actionp
             goto[st] = st_goto
-            st += 1
 
 
 # -----------------------------------------------------------------------------
@@ -2084,7 +2071,7 @@ def parse_grammar(doc, file, line):
             if p[0] == "|":
                 # This is a continuation of a previous rule
                 if not lastp:
-                    raise SyntaxError("%s:%d: Misplaced '|'" % (file, dline))
+                    raise SyntaxError(f"{file}:{dline}: Misplaced '|'")
                 prodname = lastp
                 syms = p[1:]
             else:
@@ -2094,16 +2081,16 @@ def parse_grammar(doc, file, line):
                 assign = p[1]
                 if assign != ":" and assign != "::=":
                     raise SyntaxError(
-                        "%s:%d: Syntax error. Expected ':'" % (file, dline)
+                        f"{file}:{dline}: Syntax error. Expected ':'"
                     )
 
             grammar.append((file, dline, prodname, syms))
         except SyntaxError:
             raise
-        except Exception:
+        except (IndexError, ValueError):
             raise SyntaxError(
-                "%s:%d: Syntax error in rule %r" % (file, dline, ps.strip())
-            )
+                f"{file}:{dline}: Syntax error in rule {ps.strip()!r}"
+            ) from None
 
     return grammar
 
@@ -2115,7 +2102,7 @@ def parse_grammar(doc, file, line):
 # start symbol, error function, tokens, precedence list, action functions,
 # etc.
 # -----------------------------------------------------------------------------
-class ParserReflect(object):
+class ParserReflect:
     def __init__(self, pdict, log=None):
         self.pdict = pdict
         self.start = None
@@ -2183,7 +2170,7 @@ class ParserReflect(object):
         for module in self.modules:
             try:
                 lines, linen = inspect.getsourcelines(module)
-            except IOError:
+            except OSError:
                 continue
 
             counthash = {}
@@ -2211,9 +2198,8 @@ class ParserReflect(object):
 
     # Validate the start symbol
     def validate_start(self):
-        if self.start is not None:
-            if not isinstance(self.start, str):
-                self.log.error("'start' must be a string")
+        if self.start is not None and not isinstance(self.start, str):
+            self.log.error("'start' must be a string")
 
     # Look for error handler
     def get_error_func(self):
@@ -2395,21 +2381,24 @@ class ParserReflect(object):
                 continue
             if n.startswith("p_") and n != "p_error":
                 self.log.warning("%r not defined as a function", n)
-            if (isinstance(v, types.FunctionType) and v.__code__.co_argcount == 1) or (
-                isinstance(v, types.MethodType) and v.__func__.__code__.co_argcount == 2
-            ):
-                if v.__doc__:
-                    try:
-                        doc = v.__doc__.split(" ")
-                        if doc[1] == ":":
-                            self.log.warning(
-                                "%s:%d: Possible grammar rule %r defined without p_ prefix",
-                                v.__code__.co_filename,
-                                v.__code__.co_firstlineno,
-                                n,
-                            )
-                    except IndexError:
-                        pass
+            if (
+                (isinstance(v, types.FunctionType) and v.__code__.co_argcount == 1)
+                or (
+                    isinstance(v, types.MethodType)
+                    and v.__func__.__code__.co_argcount == 2
+                )
+            ) and v.__doc__:
+                try:
+                    doc = v.__doc__.split(" ")
+                    if doc[1] == ":":
+                        self.log.warning(
+                            "%s:%d: Possible grammar rule %r defined without p_ prefix",
+                            v.__code__.co_filename,
+                            v.__code__.co_firstlineno,
+                            n,
+                        )
+                except IndexError:
+                    pass
 
         self.grammar = grammar
 
@@ -2447,9 +2436,10 @@ def yacc(
         # from the __module__ instead
         if "__file__" not in pdict:
             pdict["__file__"] = sys.modules[pdict["__module__"]].__file__
-        if "__package__" not in pdict and "__module__" in pdict:
-            if hasattr(sys.modules[pdict["__module__"]], "__package__"):
-                pdict["__package__"] = sys.modules[pdict["__module__"]].__package__
+        if "__package__" not in pdict and "__module__" in pdict and hasattr(
+            sys.modules[pdict["__module__"]], "__package__"
+        ):
+            pdict["__package__"] = sys.modules[pdict["__module__"]].__package__
     else:
         pdict = get_caller_module_dict(2)
 
@@ -2467,9 +2457,10 @@ def yacc(
     if debuglog is None:
         if debug:
             try:
-                debuglog = PlyLogger(open(debugfile, "w"))
-            except IOError as e:
-                errorlog.warning("Couldn't open %r. %s" % (debugfile, e))
+                # The logger retains the handle while parser construction emits diagnostics.
+                debuglog = PlyLogger(Path(debugfile).open("w"))  # noqa: SIM115
+            except OSError as e:
+                errorlog.warning(f"Couldn't open {debugfile!r}. {e}")
                 debuglog = NullLogger()
         else:
             debuglog = NullLogger()

@@ -1,8 +1,8 @@
-import tempfile
 import os
+import tempfile
 from os import sep as S
 
-from jamp.classes import Target, State
+from jamp.classes import State, Target
 from jamp.executors import run
 
 

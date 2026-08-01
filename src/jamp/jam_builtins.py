@@ -1,13 +1,11 @@
-import sys
 import os
 import re
 import subprocess as sp
-
-from typing import Union
+import sys
 from pathlib import Path
 
 from jamp.classes import State, Target
-from jamp.expand import lol_get, expand
+from jamp.expand import expand, lol_get
 from jamp.pattern import match
 
 
@@ -212,7 +210,7 @@ class Builtins:
             target = Target.bind(state, target_name)
             target.noupdate = True
 
-    def _print(self, val: Union[str, list], first: bool = True):
+    def _print(self, val: str | list, first: bool = True):
         """unflatten before printing"""
         if isinstance(val, str):
             if not first:
@@ -232,7 +230,7 @@ class Builtins:
 
     def exit(self, state, args):
         self.echo(state, args)
-        exit(1)
+        sys.exit(1)
 
     def pdb(self, state, args):
         from jamp.executors import FLOW_DEBUG
@@ -276,7 +274,7 @@ class Builtins:
 
             else:
                 print(f"\t{i}: {t}")
-        print("")
+        print()
 
 
 def trace(name: str, len_args=None):

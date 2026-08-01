@@ -12,7 +12,7 @@ with open(file_in, "r") as fin:
     header = ""
     source = ""
     res = []
-    for line in fin.readlines():
+    for line in fin:
         if line.startswith("--"):
             if res:
                 header = "\n".join(res)
@@ -23,7 +23,6 @@ with open(file_in, "r") as fin:
 
     source = "".join(res)
 
-    with open(file_h, "w") as fheader:
-        with open(file_c, "w") as fsource:
-            fheader.write(header)
-            fsource.write(source)
+    with open(file_h, "w") as fheader, open(file_c, "w") as fsource:
+        fheader.write(header)
+        fsource.write(source)
