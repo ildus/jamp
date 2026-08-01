@@ -14,8 +14,8 @@
 # 12/27/93 (seiwald) - purturb library sources with SOURCE_GRIST
 # 04/18/94 (seiwald) - use '?=' when setting OS specific vars
 # 04/21/94 (seiwald) - do RmTemps together
-# 05/05/94 (seiwald) - all supported C compilers support -o: relegate
-#              RELOCATE as an option; set Ranlib to "" to disable it
+# 05/05/94 (seiwald) - all supported C compilers support -o; set Ranlib
+#              to "" to disable it
 # 06/01/94 (seiwald) - new 'actions existing' to do existing sources
 # 08/25/94 (seiwald) - new ObjectCcFlags rule to append to per-target CCFLAGS
 # 08/29/94 (seiwald) - new ObjectHdrs rule to append to per-target HDRS
@@ -403,10 +403,8 @@ DC ?= dmd ;
     MKDIR       ?= mkdir -p ;
     MV      ?= mv -f ;
     OPTIM       ?= ;
-    RCP     ?= rcp ;
     RM      ?= rm -f ;
     RMDIR       ?= $(RM) ;
-    RSH     ?= rsh ;
     SED     ?= sed ;
     SHELLHEADER ?= "#!/bin/sh" ;
     SHELLMODE   ?= 755 ;
@@ -524,13 +522,6 @@ rule Cc
 {
     Depends $(<) : $(>) ;
 
-    # If the compiler's -o flag doesn't work, relocate the .o
-
-    if $(RELOCATE)
-    {
-        CcMv $(<) : $(>) ;
-    }
-
     # Just to clarify here: this sets the per-target CCFLAGS to
     # be the current value of (global) CCFLAGS and SUBDIRCCFLAGS.
     # CCHDRS and CCDEFS must be reformatted each time for some
@@ -565,11 +556,6 @@ rule Cc
 rule C++
 {
     Depends $(<) : $(>) ;
-
-    if $(RELOCATE)
-    {
-        CcMv $(<) : $(>) ;
-    }
 
     C++FLAGS on $(<) += $(C++FLAGS) $(SUBDIRC++FLAGS) ;
 
@@ -2093,28 +2079,6 @@ actions YaccMv
 {
     $(MV) $(YACCFILES).c $(<[1])
     $(MV) $(YACCFILES).h $(<[2])
-}
-
-#
-# RELOCATE - for compilers with broken -o flags
-#
-
-if $(RELOCATE)
-{
-    actions C++
-    {
-    $(C++) -c $(C++FLAGS) $(OPTIM) $(CCDEFS) $(CCHDRS) $(>)
-    }
-
-    actions Cc
-    {
-    $(CC) -c $(CCFLAGS) $(OPTIM) $(CCDEFS) $(CCHDRS) $(>)
-    }
-
-    actions ignore CcMv
-    {
-    [ $(<) != $(>:BS=$(SUFOBJ)) ] && $(MV) $(>:BS=$(SUFOBJ)) $(<)
-    }
 }
 
 #

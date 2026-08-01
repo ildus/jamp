@@ -442,10 +442,6 @@ The owner of installed files. Used by Install* rules.
 
 The name of the ranlib command. If set, causes the Ranlib action to be applied after the Archive action to targets of the Library rule.
 
-`RELOCATE`
-
-If set, tells the Cc rule to move the output object file to its target directory because the cc command has a broken -o option.
-
 `RM`
 
 The command and options to remove a file.
