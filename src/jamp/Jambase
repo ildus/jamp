@@ -37,6 +37,7 @@
 # 07/19/99 (sickel) - Support for Mac OS X Server (and maybe client)
 # 02/18/00 (belmonte)- Support for Cygwin.
 # 18/11/24 (ikurbang)- Fix PkgInstallHeader, quote "include".
+# 02/08/26 (ikurbang)- Cleanup old platforms and tools.
 
 # Special targets defined in this file:
 #
