@@ -307,7 +307,7 @@ else if $(UNIX)
     case HPUX :
         RANLIB      ?= "" ;
 
-    case DARWIN :
+    case MACOSX :
         C++     ?= c++ ;
         MANDIR      ?= /usr/local/share/man ;
         DEFAULT_ARFLAGS     ?= csr ;
@@ -2021,7 +2021,7 @@ actions SharedLink bind NEEDLIBS
     $(LINK) $(LINKFLAGS) -shared -o $(<) $(>) $(NEEDLIBS) $(LINKLIBS)
 }
 
-if $(UNIX) && $(OS) = DARWIN
+if $(UNIX) && $(OS) = MACOSX
 {
     actions SharedLink bind NEEDLIBS
     {
