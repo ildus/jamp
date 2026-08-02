@@ -4,7 +4,7 @@ Jam build system on Python
 This is a Python reimplementation of the Jam build system
 ([link](https://swarm.workshop.perforce.com/projects/perforce_software-jam)).
 
-Supported platforms: Linux (Unix), OpenVMS, Windows (WIP), MacOS (WIP)
+Supported platforms: Linux (Unix), OpenVMS, Windows (ninja 1.14), MacOS
 
 What is Jam
 ------------
@@ -36,6 +36,9 @@ Quick Start
 
 Install:
 
+    # Using uv (easiest and recommmended) from PyPI
+    uv tool install jam-build@latest
+
     # Install jamp with the system pip
     pip3 install jam-build
 
@@ -45,7 +48,9 @@ Install:
     # Using pypy3 provides approximately twice the performance
     # pypy3 -m pip install jam-build
 
-    # Install ninja using your package manager
+
+Install `ninja` using your package manager
+
     dnf install ninja
     # or pacman -Syu ninja
     # etc.
@@ -67,15 +72,14 @@ Corresponding Jamfile:
     Library libprint : lib/print.c ;    # on Unix this will create libprint.a
     Main app : src/main.c ;             # executable
     LinkLibraries app : libprint ;      # linking the executable with our library
-    LINKLIBS on app = -lm ;             # system libraries
+    LINKLIBS on app = -lm ;             # extra libraries using paths
 
 To build the executable, simply run:
 
     jamp && ninja
 
 For more complex examples, look at the `tests` directory. When dealing with subdirectories,
-it's recommended to use the `SubDir` rule. Note that this example should work on Windows
-and Linux (because of explicit paths), but will not work on VMS.
+it's recommended to use the `SubDir` rule. Note that this example will not work on VMS.
 
 Contributing
 -----------
