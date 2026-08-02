@@ -102,7 +102,7 @@ def var_expand(
         i += 1
 
     # Recursively expand variable name & rest of input
-    variables = var_expand(inside, lol, state_vars) if len(inside) else []
+    variables = var_expand(inside, lol, state_vars) if inside else []
 
     has_remainder = i < len(var)
     remainder = var_expand(var[i:], lol, state_vars) if has_remainder else []
@@ -199,9 +199,8 @@ def var_expand(
         product_args.append(remainder)
 
     if product_args:
-        for pr in itertools.product(*product_args):
-            val = "".join(pr)
-            out.append(val)
+        for product in itertools.product(*product_args):
+            out.append("".join(product))
 
     return out
 
@@ -398,37 +397,39 @@ def var_string(
     return res
 
 
-def expand(state: State, arg: Arg | tuple | str, skip_empty=True):
-    """Make list of strings from some type of an argument"""
-
+def _expand(state: State, arg: Arg | tuple | str, skip_empty: bool) -> list:
+    """Expand an argument whose recursive results are already lists."""
     if arg is None or (skip_empty and arg == ""):
         return []
-    elif arg == "":
+    if arg == "":
         return [""]
-    elif isinstance(arg, str):
-        res = var_expand(arg, state.params, state.vars)
-    elif isinstance(arg, Exec):
+    if isinstance(arg, str):
+        return var_expand(arg, state.params, state.vars)
+    if isinstance(arg, Exec):
         from jamp.executors import Result
 
         execval = arg.execute(state)
         if execval is None:
-            res = []
-        elif isinstance(execval, Result):
-            res = execval.val
-        else:
-            raise TypeError(f"expected result, got {execval}")
-    elif isinstance(arg, Arg):
-        res = expand(state, arg.value, skip_empty=skip_empty)
-    elif isinstance(arg, list):
+            return []
+        if isinstance(execval, Result):
+            validate(execval.val)
+            return execval.val
+        raise TypeError(f"expected result, got {execval}")
+    if isinstance(arg, Arg):
+        return _expand(state, arg.value, skip_empty)
+    if isinstance(arg, list):
         res = []
         for item in arg:
-            val = expand(state, item, skip_empty=skip_empty)
-            for v in iter_var(val, skip_empty=skip_empty):
-                res.append(v)
-    else:
-        print(type(arg))
-        raise TypeError(f"could not expand arg: {arg}")
+            res.extend(_expand(state, item, skip_empty))
+        return res
 
+    print(type(arg))
+    raise TypeError(f"could not expand arg: {arg}")
+
+
+def expand(state: State, arg: Arg | tuple | str, skip_empty=True):
+    """Make list of strings from some type of an argument."""
+    res = _expand(state, arg, skip_empty)
     validate(res)
     return res
 
@@ -437,9 +438,7 @@ def expand_lol(state: State, arg: tuple):
     """Make string from some type of an argument"""
 
     if isinstance(arg, tuple) and len(arg) and arg[0] == Node.LOL:
-        res = []
-        for lol_list in arg[1:]:
-            res.append(expand(state, lol_list))
+        res = [expand(state, lol_list) for lol_list in arg[1:]]
     elif isinstance(arg, list):
         res = [[expand(state, item) for item in arg]]
     else:

@@ -51,6 +51,7 @@ SCAN_STRING = "s"
 SCAN_PUNCT = "p"
 EOF = -1
 EOL = "\n"
+WHITESPACE = " \t\n\f\r"
 
 
 class LexerError(Exception):
@@ -136,7 +137,7 @@ class Lexer:
         return self.next_token(tok)
 
     def is_space(self, c):
-        return c in {" ", "\t", EOL, "\f", "\r"}
+        return c in WHITESPACE
 
     def next_token(self, tok=None):
         if tok is None:
