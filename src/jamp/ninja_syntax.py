@@ -143,7 +143,7 @@ class Writer:
         return outputs
 
     def required_version(self, version: str) -> None:
-        self._line("ninja_required_version = %s" % version)
+        self._line(f"ninja_required_version = {version}")
 
     def include(self, path: str) -> None:
         self._line(f"include {path}")

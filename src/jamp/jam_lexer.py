@@ -66,7 +66,7 @@ class LexerToken:
 class Lexer:
     def __init__(self, filename=None):
         self.restart()
-        self.lines = []
+        self.text = ""
         self.filename = filename
         self.prevtoken = None
 
@@ -74,12 +74,17 @@ class Lexer:
         self.scanmode = mode
 
     def input(self, text: str):
-        self.lines = text.split("\n")
+        self.text = text
 
     def nextline(self):
+        """Skip the remainder of the current line (used for comments)."""
+        next_newline = self.text.find(EOL, self.pos)
         self.prevpos = self.pos
-        self.pos = 0
         self.prevlineno = self.lineno
+        if next_newline == -1:
+            self.pos = len(self.text)
+        else:
+            self.pos = next_newline + 1
         self.lineno += 1
         self.lexpos = 1
 
@@ -91,24 +96,24 @@ class Lexer:
         return self.lineno + 1
 
     def getchar(self):
-        if self.lineno >= len(self.lines):
+        if self.pos >= len(self.text):
             return EOF
-
-        line = self.lines[self.lineno]
-        if self.pos >= len(line):
-            self.nextline()
-            return EOL
 
         self.prevpos = self.pos
         self.prevlineno = self.lineno
+        c = self.text[self.pos]
         self.pos += 1
-        return line[self.prevpos]
+        if c == EOL:
+            self.lineno += 1
+            self.lexpos = 1
+        return c
 
     def get_string(self):
         # If scanning for a string (action's {}'s), look for the
         # closing brace.  We handle matching braces, if they match!
         nest = 1
-        c = self.getchar()
+        getchar = self.getchar
+        c = getchar()
 
         res = ""
         while c != EOF:
@@ -121,7 +126,7 @@ class Lexer:
                     break
 
             res += c
-            c = self.getchar()
+            c = getchar()
 
         # We ate the ending brace -- regurgitate it
         if c != EOF:
@@ -135,9 +140,6 @@ class Lexer:
         tok.value = res
 
         return self.next_token(tok)
-
-    def is_space(self, c):
-        return c in WHITESPACE
 
     def next_token(self, tok=None):
         if tok is None:
@@ -183,51 +185,48 @@ class Lexer:
         if self.scanmode == SCAN_STRING:
             return self.get_string()
 
-        c = self.getchar()
+        getchar = self.getchar
+        c = getchar()
 
         while True:
-            # Skip past white space
-            while c != EOF and self.is_space(c):
-                c = self.getchar()
+            # Skip past white space.
+            while c != EOF and c in WHITESPACE:
+                c = getchar()
 
-            # Not a comment?  Swallow up comment line.
+            # Not a comment? Swallow the rest of a comment line.
             if c != "#":
                 break
 
             self.nextline()
-            c = self.getchar()
+            c = getchar()
 
-        # c now points to the first character of a token
+        # c now points to the first character of a token.
         if c == EOF:
             return self.next_token()
 
-        # While scanning the word, disqualify it for (expensive)
-        # keyword lookup when we can: $anything, "anything", \anything
+        # While scanning the word, disqualify it for keyword lookup when we
+        # can: $anything, "anything", \anything.
         notkeyword = c == "$"
 
-        # look for white space to delimit word */
-        # "'s get stripped but preserve white space */
-        # \ protects next character */
+        # Quotes are stripped but preserve their whitespace; backslash
+        # protects the following character.
         res = ""
-        while c != EOF and (inquote or not self.is_space(c)):
+        while c != EOF and (inquote or c not in WHITESPACE):
             if c == '"':
-                # begin or end
                 inquote = not inquote
-                notkeyword = 1
+                notkeyword = True
             elif c != "\\":
-                # normal char
                 res += c
             else:
-                c = self.getchar()
+                c = getchar()
                 if c == EOF:
                     break
 
                 res += c
                 notkeyword = True
 
-            c = self.getchar()
+            c = getchar()
 
-        # Check obvious errors.
         if inquote:
             raise LexerError('unmatched " in string')
 
@@ -235,9 +234,6 @@ class Lexer:
         if c != EOF:
             self.prev()
 
-        # scan token table
-        # don't scan if it's obviously not a keyword or if its
-        # an alphabetic when were looking for punctuation
         tok = LexerToken()
         tok.type = "ARG"
         tok.value = res
