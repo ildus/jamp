@@ -236,7 +236,7 @@ if $(NT)
         LINKLIBS    ?= ;
         OPTIM       ?= "" ;
         # The Developer Command Prompt configures the standard include path.
-        STDHDRS     ?= "" ;
+        STDHDRS     ?= ;
         UNDEFFLAG   ?= "/u _" ;
     }
     else if $(JAM_TOOLSET) = MINGW
