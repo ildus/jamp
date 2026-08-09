@@ -4,7 +4,7 @@ import subprocess as sp
 import sys
 from collections import OrderedDict
 
-from jamp import executors, headers, jam_builtins
+from jamp import __version__, executors, headers, jam_builtins
 from jamp.classes import State, Target, UpdatingAction
 from jamp.paths import add_paths, check_vms, check_windows, escape_path
 
@@ -17,6 +17,7 @@ def parse_args(skip_args=False):
         prog="jamp",
         description="Jam Build System (Python version)",
     )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument("-b", "--build", action="store_true", help="call ninja")
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
     parser.add_argument("--profile", action="store_true", help="profile the execution")

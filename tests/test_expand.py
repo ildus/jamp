@@ -1,4 +1,5 @@
 from os import sep as S
+from pathlib import Path
 
 from jamp.expand import MAGIC_COLON as MC
 from jamp.expand import var_edit_parse, var_expand, var_string
@@ -48,6 +49,11 @@ def test_empty_val():
     assert var_expand("-$(a)$(b)", [], {"b": "1"}) == []
     assert var_expand("$(a)$(b)$(c)", [], {"a": ["1"], "b": [], "c": ["3"]}) == []
     assert var_expand("$(a)$(b)$(c)", [], {"a": ["1"], "b": [""], "c": ["3"]}) == ["13"]
+
+
+def test_jambase_standard_headers_default_is_empty_list():
+    jambase = Path(__file__).parents[1] / "src" / "jamp" / "Jambase"
+    assert 'STDHDRS ?= "" ;' not in jambase.read_text()
 
 
 def test_empty_include_option_in_action():
