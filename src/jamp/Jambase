@@ -258,7 +258,7 @@ if $(NT)
 #       NOARSCAN        ?= true ;
     }
 
-    STDHDRS ?= "" ;
+    STDHDRS ?= ;
 }
 else if $(VMS)
 {
