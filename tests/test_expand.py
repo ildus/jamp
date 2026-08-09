@@ -1,7 +1,7 @@
 from os import sep as S
 
 from jamp.expand import MAGIC_COLON as MC
-from jamp.expand import var_edit_parse, var_expand
+from jamp.expand import var_edit_parse, var_expand, var_string
 from jamp.paths import Pathname
 
 
@@ -48,6 +48,19 @@ def test_empty_val():
     assert var_expand("-$(a)$(b)", [], {"b": "1"}) == []
     assert var_expand("$(a)$(b)$(c)", [], {"a": ["1"], "b": [], "c": ["3"]}) == []
     assert var_expand("$(a)$(b)$(c)", [], {"a": ["1"], "b": [""], "c": ["3"]}) == ["13"]
+
+
+def test_empty_include_option_in_action():
+    # An empty list removes its whole token. A quoted empty Jam value would
+    # instead leave a bare /I, causing MSVC to consume the source path.
+    command = var_string(
+        "/I$(STDHDRS) $(>)",
+        [["compile.obj"], ["compile.c"]],
+        {"STDHDRS": []},
+        targets_cnt=1,
+        alone=True,
+    )
+    assert command == " <NINJA_SIGIL>in <NINJA_SIGIL>n"
 
 
 def test_expand2():
