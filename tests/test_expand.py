@@ -1,6 +1,8 @@
 from os import sep as S
 from pathlib import Path
 
+from jamp.classes import State
+from jamp.executors import run
 from jamp.expand import MAGIC_COLON as MC
 from jamp.expand import var_edit_parse, var_expand, var_string
 from jamp.paths import Pathname
@@ -54,6 +56,21 @@ def test_empty_val():
 def test_jambase_standard_headers_default_is_empty_list():
     jambase = Path(__file__).parents[1] / "src" / "jamp" / "Jambase"
     assert 'STDHDRS ?= "" ;' not in jambase.read_text()
+
+
+def test_jambase_visualc_toolset_falls_back_to_msvc(tmp_path):
+    jambase = Path(__file__).parents[1] / "src" / "jamp" / "Jambase"
+    jamfile = tmp_path / "Jamfile"
+    jamfile.write_text("")
+    state = State()
+    state.vars.set("JAMFILE", [str(jamfile)])
+    state.vars.set("NT", ["1"])
+    state.vars.set("JAM_TOOLSET", ["VISUALC"])
+
+    run(state, state.parse_and_compile(jambase.read_text()))
+
+    assert state.vars.get("JAM_TOOLSET") == ["MSVC"]
+    assert state.vars.get("CC") == ["cl", "/nologo"]
 
 
 def test_empty_include_option_in_action():
