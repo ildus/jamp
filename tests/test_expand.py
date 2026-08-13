@@ -273,3 +273,18 @@ def test_vms_paths_root():
     assert p.build() == orig
     p.root = "src:[one]"
     assert p.build() == "src:[one.rel]file.c;1"
+
+
+def test_pathname_parse_empty():
+    p = Pathname()
+    p.parse("")
+    assert p.build() == ""
+
+
+def test_var_expand_suffix_on_empty_name():
+    # Empty list elements must not crash filename modifiers used by HdrRule.
+    assert var_expand("$(a:S)", [], {"a": ["a.h", "", "b.h"]}) == [".h", ".h"]
+    assert var_expand("$(>:G=)", [["t"], ["a.h", "", "b.h"]], {}) == [
+        "a.h",
+        "b.h",
+    ]

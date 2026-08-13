@@ -381,7 +381,9 @@ class UnderTarget:
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.state.vars.current_context.pop()
-        return True
+        # Do not suppress exceptions (returning True would hide failures
+        # during header scanning and leave includes only partially applied).
+        return False
 
 
 class Target:

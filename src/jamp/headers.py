@@ -7,7 +7,7 @@ from functools import cache
 headers_cache = None
 headers_cache_loaded = None
 FN_CACHE = "jamp_saved_headers.cache"
-HEADERS_CACHE_VERSION = 2
+HEADERS_CACHE_VERSION = 3
 
 HEADER_MACRO_DEFINE_RE = re.compile(
     r'^[ \t]*#[ \t]*define[ \t]*([A-Za-z][A-Za-z0-9_]*)[ \t]*[<"]([^">]*)[">].*$'
@@ -15,6 +15,11 @@ HEADER_MACRO_DEFINE_RE = re.compile(
 HEADER_MACRO_INCLUDE_RE = re.compile(
     r"^[ \t]*#[ \t]*include[ \t]*([A-Za-z][A-Za-z0-9_]*).*$"
 )
+
+
+def _header_names(groups) -> list[str]:
+    """Return non-empty header names from a regex match group tuple."""
+    return [h for h in groups if h]
 
 
 def load_headers_cache():
@@ -129,7 +134,12 @@ def target_find_headers(state, target, db: dict | None = None) -> bool:
             print(target.name, target.headers)
 
     if target.headers:
-        if ts is not None and headers is None and not state.header_macros:
+        if (
+            ts is not None
+            and headers is None
+            and not state.header_macros
+            and headers_cache is not None
+        ):
             headers_cache[target.boundname] = (ts, target.headers)
 
         lol.append(target.headers)
@@ -221,7 +231,7 @@ def scan_headers(state, fn: str, hdrscan: tuple):
         for line in f:
             for pattern in patterns:
                 for match in pattern.finditer(line):
-                    headers += list(match.groups())
+                    headers += _header_names(match.groups())
 
     headers.extend(scan_header_macro_includes(state, fn))
     return headers
@@ -258,7 +268,7 @@ def scan_ripgrep_output(state, pattern):
         headers = res.setdefault(fn, [])
 
         for m in re.finditer(pattern, line):
-            headers += list(m.groups())
+            headers += _header_names(m.groups())
 
     return res
 
@@ -288,6 +298,6 @@ def scan_grep_output(state, pattern):
         headers = res.setdefault(fn, [])
 
         for m in re.finditer(pattern, match):
-            headers += list(m.groups())
+            headers += _header_names(m.groups())
 
     return res

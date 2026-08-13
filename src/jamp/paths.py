@@ -117,6 +117,13 @@ class Pathname:
         )
 
     def parse(self, string):
+        # Empty names occur when HDRSCAN patterns capture nothing (e.g. a
+        # secondary ESQL pattern matching `exec sql include <foo.sh>`).
+        # Treat them as an empty path rather than indexing string[0].
+        if not string:
+            self.zero()
+            return
+
         idx = string.find(">")
 
         # check for grist
